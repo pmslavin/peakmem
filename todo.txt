@@ -1,3 +1,4 @@
 [1]  fork/exec process
 [2]  Monitor run time
 [3]  Record run time for HI/LO
+[4]  SIGCHLD and post-mortem
