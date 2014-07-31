@@ -1,4 +1,29 @@
-[1]  fork/exec process
-[2]  Monitor run time
-[3]  Record run time for HI/LO
-[4]  SIGCHLD and post-mortem
+[1]  fork/exec process			DONE
+[2]  Monitor run time			DONE
+[3]  Record run time for HI/LO		DONE
+[4]  SIGCHLD and post-mortem		DONE
+[5]  Remove LO				DONE
+[6]  VmSize, VmHWM, VmRSS
+[7]  Ansi highlights
+[8]  Write log
+[9]  Autoconf
+
+
+
+
+Banner
+======
+
+[PeakMem] xterm (8184)  VmPeak:  [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]   (00:00:23)
+[PeakMem] xterm (8184)  VmSize:  [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]   (00:00:23)
+[PeakMem] xterm (8184)  VmHWM:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]   (00:00:23)
+[PeakMem] xterm (8184)  VmRSS:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]   (00:00:23)
+
+
+[PeakMem] xterm (8184)			 		       00:00:23
+VmPeak:  [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
+VmSize:  [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
+VmHWM:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
+VmRSS:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
+
+
