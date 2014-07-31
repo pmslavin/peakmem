@@ -30,19 +30,33 @@ int main(int argc, char *argv[])
 	unsigned int hours = 0, mins = 0, secs = 0;
 	unsigned int hi_hours = 0, hi_mins = 0, hi_secs = 0;
 	time_t hitime;
+	pid_t pid;
 
 	if(argc == 1){
 		fprintf(stderr, "Usage: %s <program>\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
+	if(!strcmp(argv[1], "-p")){
+		FILE *fp;
 
-	pname = argv[1];
-	pid_t pid = fork();
+		pid = atoi(argv[2]);
+		snprintf(statfile, 24, "/proc/%d/status", pid);
+		if(!(fp = fopen(statfile, "r"))){
+			fprintf(stderr, "Unable to open %s.\n", statfile);
+			exit(EXIT_FAILURE);
+		}
+		pname = (char *)malloc(sizeof(char)*32);
+		fscanf(fp, "Name: %s", pname);
+		fclose(fp);
+	}else{
+		pname = argv[1];
+		pid = fork();
 
-	if(!pid){
-		execvp(pname, &argv[1]);
-		exit(EXIT_FAILURE);
+		if(!pid){
+			execvp(pname, &argv[1]);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	cstate = 1;
@@ -76,7 +90,7 @@ int main(int argc, char *argv[])
 		secs = deltasec % 60;
 
 		prevlen = linelen;
-		linelen = printf("\r\x1B[7m[PeakMem] %s (%d)\x1B[0m    [ HI: %lld kB  (%02d:%02d:%02d)   AVG: %lld kB    LAST: %lld kB ]   (%02d:%02d:%02d)" \
+		linelen = printf("\r\x1B[31m[PeakMem] %s (%d)\x1B[0m    [ HI: %lld kB  (%02d:%02d:%02d)   AVG: %lld kB    LAST: %lld kB ]   \x1B[32m(%02d:%02d:%02d)\x1B[0m" \
 				, pname, pid, hi, hi_hours, hi_mins, hi_secs, avg, last, hours, mins, secs);
 		if(linelen < prevlen){
 			printf("%*.s", prevlen-linelen, " ");
@@ -89,13 +103,14 @@ int main(int argc, char *argv[])
 	putchar('\n');
 
 	if(WIFEXITED(status)){
-		printf("\x1B[7m[PeakMem] %s (%d)\x1B[0m  Normal exit (%02d:%02d:%02d) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
+		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02d:%02d:%02d) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
-		printf("\x1B[7m[PeakMem] %s (%d)\x1B[0m  Terminated (%02d:%02d:%02d) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
+		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Terminated (%02d:%02d:%02d) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
 	}
 
+	
 	return 0;
 }
 

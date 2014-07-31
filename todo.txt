@@ -1,12 +1,13 @@
-[1]  fork/exec process			DONE
-[2]  Monitor run time			DONE
-[3]  Record run time for HI/LO		DONE
-[4]  SIGCHLD and post-mortem		DONE
-[5]  Remove LO				DONE
-[6]  VmSize, VmHWM, VmRSS
-[7]  Ansi highlights
-[8]  Write log
-[9]  Autoconf
+[1]   fork/exec process			DONE
+[2]   Monitor run time			DONE
+[3]   Record run time for HI/LO		DONE
+[4]   SIGCHLD and post-mortem		DONE
+[5]   Remove LO				DONE
+[6]   VmSize, VmHWM, VmRSS
+[7]   Attached to existing pid		DONE
+[8]   Ansi highlights
+[9]   Write log
+[10]  Autoconf
 
 
 
