@@ -3,11 +3,14 @@
 [3]   Record run time for HI/LO		DONE
 [4]   SIGCHLD and post-mortem		DONE
 [5]   Remove LO				DONE
-[6]   VmSize, VmHWM, VmRSS
+[6]   VmSize, VmHWM, VmRSS		DONE
 [7]   Attach to existing pid		DONE
 [8]   Ansi highlights
-[9]   Write log
-[10]  Autoconf
+[9]   New banner format
+[10]  Write log
+[11]  Replace signal with sigaction
+[12]  Command line options
+[13]  Autoconf
 
 
 
