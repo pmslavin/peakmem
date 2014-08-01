@@ -4,7 +4,7 @@
 [4]   SIGCHLD and post-mortem		DONE
 [5]   Remove LO				DONE
 [6]   VmSize, VmHWM, VmRSS
-[7]   Attached to existing pid		DONE
+[7]   Attach to existing pid		DONE
 [8]   Ansi highlights
 [9]   Write log
 [10]  Autoconf
@@ -26,5 +26,21 @@ VmPeak:  [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
 VmSize:  [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
 VmHWM:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
 VmRSS:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
+
+
+
+
+-------------------------------------[ PeakMem xterm (8184) ]----------------------------------------
+----------------- VmSize ------------------------------------ VmRSS ---------------------- Uptime --
+   VmPeak     Time	 AVG	   LAST    |   VmHWM     Time       AVG       LAST     |    
+  13108 kB (00:00:00)  12966 kB  13108 kB  | 13108 kB (00:00:00)  12966 kB  13108 kB   | (00:00:00)
+
+
+
+
+------------------------------------[ PeakMem xterm (8184) ]-----------------------------------------
+----------------- VmSize -------------------|---------------- VmRSS ------------------------ Uptime -
+ VmPeak kB     Time	  AVG kB   LAST kB  |  VmHWM kB     Time      AVG kB    LAST  kB  |    
+  88813108   00:00:00   1572966   17333108  |  19843108   00:00:00   12984966   13957108  | 00:00:00
 
 
