@@ -5,10 +5,10 @@
 [5]   Remove LO				DONE
 [6]   VmSize, VmHWM, VmRSS		DONE
 [7]   Attach to existing pid		DONE
-[8]   Ansi highlights
-[9]   New banner format
+[8]   Ansi highlights			DONE
+[9]   New banner format			DONE
 [10]  Write log
-[11]  Replace signal with sigaction
+[11]  Replace signal with sigaction	????
 [12]  Command line options
 [13]  Autoconf
 
@@ -41,9 +41,16 @@ VmRSS:   [ HI: 13108 kB  (00:00:00)   AVG: 12966 kB    LAST: 13108 kB ]
 
 
 
-------------------------------------[ PeakMem xterm (8184) ]-----------------------------------------
------------------ VmSize -------------------|---------------- VmRSS ------------------------ Uptime -
- VmPeak kB     Time	  AVG kB   LAST kB  |  VmHWM kB     Time      AVG kB    LAST  kB  |    
-  88813108   00:00:00   1572966   17333108  |  19843108   00:00:00   12984966   13957108  | 00:00:00
+-----------------------------------------[ PeakMem xterm (8184) ]----------------------------------------------
+---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -
+   VmPeak kB     Time	    AVG kB      LAST kB   |   VmHWM kB      Time       AVG kB      LAST  kB  |    
+  1234567890   00:00:00   1234567890   1234567890 |  1234567890   00:00:00   1234567890   1234567890 | 00:00:00
 
+
+
+				      [ PeakMem xterm (8184) ]
+---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -
+   VmPeak kB     Time	    AVG kB      LAST kB   |   VmHWM kB      Time       AVG kB      LAST  kB  |    
+  1234567890   00:00:00   1234567890   1234567890 |  1234567890   00:00:00   1234567890   1234567890 | 00:00:00
+                                                  51                                                 102
 

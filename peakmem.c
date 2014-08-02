@@ -10,9 +10,10 @@
 #include <signal.h>
 
 extern const char *const sys_siglist[];
-const int HZ = 4, KEYCOUNT = 2;
+const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
 
 int cstate = 0, status =0;
+static unsigned int linelen = 0;
 struct timeval tv[2];	// START, LAST
 enum { START, LAST };
 enum { SZ, RSS };
@@ -27,23 +28,22 @@ struct keystate{
 
 long long pollProc(const char *const, const char *const);
 void sigchld_handler(int);
+int writeBanner(FILE *, const struct keystate *, const time_t);
 
 
 int main(int argc, char *argv[])
 {
-	char statfile[24], *pname = NULL;
-	unsigned int count = 0, linelen = 0, prevlen = 0;
-	unsigned int hours = 0, mins = 0, secs = 0;
-	time_t hitime;
+	char statfile[24], headtext[80], header[WIDTH], *pname = NULL;
+	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
+	time_t hitime, deltasec;
 	pid_t pid;
 	int key;
+	size_t headtextlen, headidx;
 
 	struct keystate states[2] = {
 		{-1L, 0L, -1L, 0, 0, 0, "VmSize: %lld kB"},	// SZ
 		{-1L, 0L, -1L, 0, 0, 0, "VmRSS: %lld kB"}	// RSS
 	};
-
-//	printf("%d: %lld %lld %lld %u %u %u\n", RSS, states[RSS].last, states[RSS].avg, states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs);
 
 	if(argc == 1){
 		fprintf(stderr, "Usage: %s <program>\n", argv[0]);
@@ -77,6 +77,23 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, sigchld_handler);
 	snprintf(statfile, 24, "/proc/%d/status", pid);
 
+	headtextlen = snprintf(headtext, 80, " \x1B[32m[ PeakMem %s (%d) ]\x1B[0m ", pname, pid);
+
+	char *p = header;
+	for(int i=0; i<WIDTH-1; i++){
+		*p++ = ' ';
+	}
+	*p = 0;
+
+//	-9 = uptime column, +3 = escape code correction
+	headidx = (WIDTH-9)/2 - headtextlen/2 + 3;
+	p = &header[headidx];
+	strncpy(p, headtext, headtextlen);
+
+	puts(header);
+	puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
+	puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
+
 	while(cstate){
 
 		for(key=0; key<KEYCOUNT; key++){
@@ -84,7 +101,7 @@ int main(int argc, char *argv[])
 		}
 
 		gettimeofday(&tv[LAST], NULL);
-		time_t deltasec = tv[LAST].tv_sec - tv[START].tv_sec;
+		deltasec = tv[LAST].tv_sec - tv[START].tv_sec;
 
 		for(key=0; key<KEYCOUNT; key++){
 			if(states[key].last > states[key].hi){
@@ -99,25 +116,18 @@ int main(int argc, char *argv[])
 		}
 		count++;
 
-		hours = deltasec/3600;
-		mins = (deltasec-(3600*hours))/60;
-		secs = deltasec % 60;
-
-		prevlen = linelen;
-		linelen = printf("\r\x1B[31m[PeakMem] %s (%d)\x1B[0m    [ HI: %lld kB  (%02u:%02u:%02u)   AVG: %lld kB    LAST: %lld kB ]   \x1B[32m(%02u:%02u:%02u)\x1B[0m" \
-				, pname, pid, states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs, states[RSS].avg, states[RSS].last, hours, mins, secs);
-		if(linelen < prevlen){
-			printf("%*.s", prevlen-linelen, " ");
-		}
-		fflush(stdout);
-
+		writeBanner(stdout, states, deltasec);
 		usleep(1000000/HZ);
 	}
+
+	hours = deltasec/3600;
+	mins = (deltasec-(3600*hours))/60;
+	secs = deltasec % 60;
 
 	putchar('\n');
 
 	if(WIFEXITED(status)){
-		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02u:%02u:%02u) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
+		printf("\x1B[32m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02u:%02u:%02u) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
@@ -164,3 +174,20 @@ void sigchld_handler(int signo)
 	cstate = 0;
 }
 
+
+int writeBanner(FILE *fp, const struct keystate *const states, const time_t deltasec)
+{
+
+	unsigned int hours = deltasec/3600;
+	unsigned int mins = (deltasec-(3600*hours))/60;
+	unsigned int secs = deltasec % 60;
+
+	linelen = fprintf(fp, "\r  %10lld   %02u:%02u:%02u   %10lld   %10lld |  %10lld   %02u:%02u:%02u   %10lld   %10lld | %02u:%02u:%02u", states[SZ].hi, \
+				states[SZ].hi_hours, states[SZ].hi_mins, states[SZ].hi_secs, states[SZ].avg, states[SZ].last, \
+				states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs, states[RSS].avg, states[RSS].last, \
+				hours, mins, secs);
+
+	fflush(fp);
+
+	return linelen;
+}
