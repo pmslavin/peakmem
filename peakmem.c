@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <errno.h>
 #include <limits.h>
 #include <signal.h>
 
@@ -13,7 +14,6 @@ extern const char *const sys_siglist[];
 const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
 
 int cstate = 0, status =0;
-static unsigned int linelen = 0;
 struct timeval tv[2];	// START, LAST
 enum { START, LAST };
 enum { SZ, RSS };
@@ -29,16 +29,18 @@ struct keystate{
 long long pollProc(const char *const, const char *const);
 void sigchld_handler(int);
 int writeBanner(FILE *, const struct keystate *, const time_t);
+int writeLog(FILE *, const struct keystate *, const time_t);
 
 
 int main(int argc, char *argv[])
 {
-	char statfile[24], headtext[80], header[WIDTH], *pname = NULL;
+	char statfile[24], headtext[80], logfile[32], header[WIDTH], *pname = NULL;
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
 	time_t hitime, deltasec;
 	pid_t pid;
 	int key;
 	size_t headtextlen, headidx;
+	FILE *fp=NULL, *logfp=NULL;
 
 	struct keystate states[2] = {
 		{-1L, 0L, -1L, 0, 0, 0, "VmSize: %lld kB"},	// SZ
@@ -51,7 +53,6 @@ int main(int argc, char *argv[])
 	}
 
 	if(!strcmp(argv[1], "-p")){
-		FILE *fp;
 
 		pid = atoi(argv[2]);
 		snprintf(statfile, 24, "/proc/%d/status", pid);
@@ -63,13 +64,30 @@ int main(int argc, char *argv[])
 		fscanf(fp, "Name: %s", pname);
 		fclose(fp);
 	}else{
-		pname = argv[1];
+		pname = strrchr(argv[1], '/');
+		if(!pname)
+			pname = argv[1];
+		else
+			pname++;
+
 		pid = fork();
 
 		if(!pid){
-			execvp(pname, &argv[1]);
+			execvp(argv[1], &argv[1]);
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	if(argc > 2 && !strcmp(argv[2], "-l")){
+		snprintf(logfile, 32, "%s.%d.log", pname, pid);
+		if(!(logfp = fopen(logfile, "w"))){
+			perror(logfile);
+			exit(EXIT_FAILURE);
+		}
+
+		fprintf(logfp, "# \"PeakMem: %s\"\n", logfile);
+		fprintf(logfp, "#Seconds:VmPeak:VmSize:VmHWM:VmRSS\n");
+		fflush(logfp);
 	}
 
 	cstate = 1;
@@ -114,6 +132,10 @@ int main(int argc, char *argv[])
 
 			states[key].avg += (states[key].last-states[key].avg)/(count+1);
 		}
+
+		if(logfp)
+			writeLog(logfp, states, deltasec);
+
 		count++;
 
 		writeBanner(stdout, states, deltasec);
@@ -134,7 +156,9 @@ int main(int argc, char *argv[])
 		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
 	}
 
-	
+	if(logfp)
+		fclose(logfp);	
+
 	return 0;
 }
 
@@ -182,7 +206,7 @@ int writeBanner(FILE *fp, const struct keystate *const states, const time_t delt
 	unsigned int mins = (deltasec-(3600*hours))/60;
 	unsigned int secs = deltasec % 60;
 
-	linelen = fprintf(fp, "\r  %10lld   %02u:%02u:%02u   %10lld   %10lld |  %10lld   %02u:%02u:%02u   %10lld   %10lld | %02u:%02u:%02u", states[SZ].hi, \
+	int linelen = fprintf(fp, "\r  %10lld   %02u:%02u:%02u   %10lld   %10lld |  %10lld   %02u:%02u:%02u   %10lld   %10lld | %02u:%02u:%02u", states[SZ].hi, \
 				states[SZ].hi_hours, states[SZ].hi_mins, states[SZ].hi_secs, states[SZ].avg, states[SZ].last, \
 				states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs, states[RSS].avg, states[RSS].last, \
 				hours, mins, secs);
@@ -190,4 +214,11 @@ int writeBanner(FILE *fp, const struct keystate *const states, const time_t delt
 	fflush(fp);
 
 	return linelen;
+}
+
+
+int writeLog(FILE *fp, const struct keystate *const states, const time_t deltasec){
+
+	return fprintf(fp, "%u %lld %lld %lld %lld\n", (unsigned int)deltasec, states[SZ].hi, states[SZ].last, states[RSS].hi, states[RSS].last);
+
 }

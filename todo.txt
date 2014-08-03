@@ -7,9 +7,9 @@
 [7]   Attach to existing pid		DONE
 [8]   Ansi highlights			DONE
 [9]   New banner format			DONE
-[10]  Write log
+[10]  Write log				DONE
 [11]  Replace signal with sigaction	????
-[12]  Command line options
+[12]  getopt
 [13]  Autoconf
 
 
