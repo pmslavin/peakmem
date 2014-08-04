@@ -11,28 +11,20 @@
 #include <signal.h>
 #include <getopt.h>
 
+#include "peakmem.h"
+
 extern const char *const sys_siglist[];
 const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
 const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
 const char *ctrl_green = "\x1B[32m";
 const char *ctrl_red = "\x1B[31m";
 const char *ctrl_reset = "\x1B[0m";
+const char *const version = "1.0.0-rc3";
 
 int cstate = 0, status =0;
 struct timeval tv[2];	// START, LAST
 enum { START, LAST };
 enum { SZ, RSS };
-
-struct keystate{
-	long long last, avg, hi;
-	unsigned int hi_hours, hi_mins, hi_secs;
-	const char *const key;
-};
-
-long long pollProc(const char *const, const char *const);
-void sigchld_handler(int);
-int writeBanner(FILE *, const struct keystate *, const time_t);
-int writeLog(FILE *, const struct keystate *, const time_t);
 
 
 int main(int argc, char *argv[])
@@ -55,7 +47,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	while((opt = getopt(argc, argv, "np:ls")) != -1){
+	while((opt = getopt(argc, argv, "np:lsh")) != -1){
 		switch(opt){
 			case 'p':
 				pid = atoi(optarg);
@@ -76,6 +68,9 @@ int main(int argc, char *argv[])
 				silent = 1; // Falls through...
 			case 'l':
 				logflag = 1;
+				break;
+			case 'h':
+				fullUsage(stdout, EXIT_SUCCESS);
 				break;
 			default:
 				fprintf(stderr, usage, argv[0]);
@@ -254,8 +249,24 @@ int writeBanner(FILE *fp, const struct keystate *const states, const time_t delt
 }
 
 
-int writeLog(FILE *fp, const struct keystate *const states, const time_t deltasec){
-
+int writeLog(FILE *fp, const struct keystate *const states, const time_t deltasec)
+{
 	return fprintf(fp, "%u %lld %lld %lld %lld\n", (unsigned int)deltasec, states[SZ].hi, states[SZ].last, states[RSS].hi, states[RSS].last);
+}
 
+
+void fullUsage(FILE *fp, int exitcode)
+{
+	fprintf(fp, "PeakMem version %s\n", version);
+	fprintf(fp, usage, "PeakMem");
+	fprintf(fp,
+		"    <program>               Launch and monitor <program>.\n"
+		"    -p <pid>                Attach to existing process <pid>.\n"
+		"    -l                      Write log file during operation.\n"
+		"    -s                      Print no output to terminal, implies -l.\n"
+		"    -n                      Disable ANSI colour for terminal output.\n"
+		"    -h                      Print this help.\n"
+	       );
+
+	exit(exitcode);
 }

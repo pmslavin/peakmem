@@ -11,7 +11,7 @@
 [11]  Replace signal with sigaction	????
 [12]  getopt				DONE
 [13]  Options: no ansi, log only	DONE
-[14]  Options: full usage text
+[14]  Options: full usage text		DONE
 [15]  Autoconf
 
 
