@@ -9,22 +9,22 @@
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
+#include <getopt.h>
 
 extern const char *const sys_siglist[];
 const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
+const char *const usage = "Usage: %s [-l] -p <pid> | <program>\n";
 
 int cstate = 0, status =0;
 struct timeval tv[2];	// START, LAST
 enum { START, LAST };
 enum { SZ, RSS };
 
-
 struct keystate{
 	long long last, avg, hi;
 	unsigned int hi_hours, hi_mins, hi_secs;
 	const char *const key;
 };
-
 
 long long pollProc(const char *const, const char *const);
 void sigchld_handler(int);
@@ -37,10 +37,10 @@ int main(int argc, char *argv[])
 	char statfile[24], headtext[80], logfile[32], header[WIDTH], *pname = NULL;
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
 	time_t hitime, deltasec;
-	pid_t pid;
-	int key;
+	pid_t pid = 0;
+	int key, opt, logflag = 0;
 	size_t headtextlen, headidx;
-	FILE *fp=NULL, *logfp=NULL;
+	FILE *fp = NULL, *logfp = NULL;
 
 	struct keystate states[2] = {
 		{-1L, 0L, -1L, 0, 0, 0, "VmSize: %lld kB"},	// SZ
@@ -48,37 +48,53 @@ int main(int argc, char *argv[])
 	};
 
 	if(argc == 1){
-		fprintf(stderr, "Usage: %s <program>\n", argv[0]);
+		fprintf(stderr, usage, argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
-	if(!strcmp(argv[1], "-p")){
+	while((opt = getopt(argc, argv, "p:l")) != -1){
+		switch(opt){
+			case 'p':
+				pid = atoi(optarg);
+				snprintf(statfile, 24, "/proc/%d/status", pid);
+				if(!(fp = fopen(statfile, "r"))){
+					fprintf(stderr, "Unable to open %s.\n", statfile);
+					exit(EXIT_FAILURE);
+				}
+				pname = (char *)malloc(sizeof(char)*48);
+				fscanf(fp, "Name: %s", pname);
+				fclose(fp);
+				break;
+			case 'l':
+				logflag = 1;
+				break;
+			default:
+				fprintf(stderr, usage, argv[0]);
+				exit(EXIT_FAILURE);
+				break;
+		}
+	}
 
-		pid = atoi(argv[2]);
-		snprintf(statfile, 24, "/proc/%d/status", pid);
-		if(!(fp = fopen(statfile, "r"))){
-			fprintf(stderr, "Unable to open %s.\n", statfile);
+	if(!pid){
+	       	if(optind >= argc){
+			fprintf(stderr, "Program to monitor expected.\n");
 			exit(EXIT_FAILURE);
 		}
-		pname = (char *)malloc(sizeof(char)*32);
-		fscanf(fp, "Name: %s", pname);
-		fclose(fp);
-	}else{
-		pname = strrchr(argv[1], '/');
+		pname = strrchr(argv[optind], '/');
 		if(!pname)
-			pname = argv[1];
+			pname = argv[optind];
 		else
 			pname++;
 
 		pid = fork();
-
 		if(!pid){
-			execvp(argv[1], &argv[1]);
+			execvp(argv[optind], &argv[optind]);
 			exit(EXIT_FAILURE);
 		}
+
 	}
 
-	if(argc > 2 && !strcmp(argv[2], "-l")){
+	if(logflag){
 		snprintf(logfile, 32, "%s.%d.log", pname, pid);
 		if(!(logfp = fopen(logfile, "w"))){
 			perror(logfile);
@@ -90,9 +106,7 @@ int main(int argc, char *argv[])
 		fflush(logfp);
 	}
 
-	cstate = 1;
 	gettimeofday(&tv[START], NULL);
-	signal(SIGCHLD, sigchld_handler);
 	snprintf(statfile, 24, "/proc/%d/status", pid);
 
 	headtextlen = snprintf(headtext, 80, " \x1B[32m[ PeakMem %s (%d) ]\x1B[0m ", pname, pid);
@@ -108,9 +122,13 @@ int main(int argc, char *argv[])
 	p = &header[headidx];
 	strncpy(p, headtext, headtextlen);
 
+	signal(SIGCHLD, sigchld_handler);
+
 	puts(header);
 	puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
 	puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
+
+	cstate = 1;
 
 	while(cstate){
 
@@ -133,7 +151,7 @@ int main(int argc, char *argv[])
 			states[key].avg += (states[key].last-states[key].avg)/(count+1);
 		}
 
-		if(logfp)
+		if(logfp && !(count%HZ))
 			writeLog(logfp, states, deltasec);
 
 		count++;
@@ -170,15 +188,19 @@ long long pollProc(const char *const statfile, const char *const key)
 	long long last =-1L;
 
 	char *head = strchr(key, ':');
+	const char *const readerr = "Unable to read %s: child process not created.\n";
 	int idx = head - key;
 
 	if(!(fp = fopen(statfile, "r"))){
-		fprintf(stderr, "Unable to read %s.\n", statfile);
+		fprintf(stderr, readerr, statfile);
 		exit(EXIT_FAILURE);
 	}
 
 	while(!feof(fp)){
-		fgets(linebuf, 128, fp);
+		if(!fgets(linebuf, 128, fp)){
+			fprintf(stderr, readerr, statfile);
+			exit(EXIT_FAILURE);
+		}
 		if(!strncmp(key, linebuf, idx)){
 			sscanf(linebuf, key, &last);
 			break;
@@ -194,7 +216,6 @@ void sigchld_handler(int signo)
 {
 	(void)signo;	// Unused
 	wait(&status);
-
 	cstate = 0;
 }
 

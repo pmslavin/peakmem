@@ -9,7 +9,8 @@
 [9]   New banner format			DONE
 [10]  Write log				DONE
 [11]  Replace signal with sigaction	????
-[12]  getopt
+[12]  getopt				DONE
+[13]  Options: no ansi, log only
 [13]  Autoconf
 
 
