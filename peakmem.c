@@ -13,7 +13,10 @@
 
 extern const char *const sys_siglist[];
 const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
-const char *const usage = "Usage: %s [-l] -p <pid> | <program>\n";
+const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
+const char *ctrl_green = "\x1B[32m";
+const char *ctrl_red = "\x1B[31m";
+const char *ctrl_reset = "\x1B[0m";
 
 int cstate = 0, status =0;
 struct timeval tv[2];	// START, LAST
@@ -38,7 +41,7 @@ int main(int argc, char *argv[])
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
 	time_t hitime, deltasec;
 	pid_t pid = 0;
-	int key, opt, logflag = 0;
+	int key, opt, logflag = 0, silent = 0, offset_ctrl = 3;
 	size_t headtextlen, headidx;
 	FILE *fp = NULL, *logfp = NULL;
 
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	while((opt = getopt(argc, argv, "p:l")) != -1){
+	while((opt = getopt(argc, argv, "np:ls")) != -1){
 		switch(opt){
 			case 'p':
 				pid = atoi(optarg);
@@ -65,6 +68,12 @@ int main(int argc, char *argv[])
 				fscanf(fp, "Name: %s", pname);
 				fclose(fp);
 				break;
+			case 'n':
+				ctrl_green = ctrl_red = ctrl_reset = "";
+				offset_ctrl = 0;
+				break;
+			case 's':
+				silent = 1; // Falls through...
 			case 'l':
 				logflag = 1;
 				break;
@@ -109,24 +118,27 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv[START], NULL);
 	snprintf(statfile, 24, "/proc/%d/status", pid);
 
-	headtextlen = snprintf(headtext, 80, " \x1B[32m[ PeakMem %s (%d) ]\x1B[0m ", pname, pid);
-
-	char *p = header;
-	for(int i=0; i<WIDTH-1; i++){
-		*p++ = ' ';
-	}
-	*p = 0;
-
-//	-9 = uptime column, +3 = escape code correction
-	headidx = (WIDTH-9)/2 - headtextlen/2 + 3;
-	p = &header[headidx];
-	strncpy(p, headtext, headtextlen);
-
 	signal(SIGCHLD, sigchld_handler);
 
-	puts(header);
-	puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
-	puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
+	if(!silent){
+//		headtextlen = snprintf(headtext, 80, " \x1B[32m[ PeakMem %s (%d) ]\x1B[0m ", pname, pid);
+		headtextlen = snprintf(headtext, 80, " %s[ PeakMem %s (%d) ]%s ",ctrl_green, pname, pid, ctrl_reset);
+
+		char *p = header;
+		for(int i=0; i<WIDTH-1; i++){
+			*p++ = ' ';
+		}
+		*p = 0;
+
+//		-9 = uptime column, +3 = escape code correction
+		headidx = (WIDTH-9)/2 - headtextlen/2 + offset_ctrl;
+		p = &header[headidx];
+		strncpy(p, headtext, headtextlen);
+
+		puts(header);
+		puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
+		puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
+	}
 
 	cstate = 1;
 
@@ -156,7 +168,9 @@ int main(int argc, char *argv[])
 
 		count++;
 
-		writeBanner(stdout, states, deltasec);
+		if(!silent)
+			writeBanner(stdout, states, deltasec);
+
 		usleep(1000000/HZ);
 	}
 
@@ -167,11 +181,13 @@ int main(int argc, char *argv[])
 	putchar('\n');
 
 	if(WIFEXITED(status)){
-		printf("\x1B[32m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02u:%02u:%02u) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
+//		printf("\x1B[32m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02u:%02u:%02u) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
+		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n", ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
-		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
+//		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
+		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
 	}
 
 	if(logfp)

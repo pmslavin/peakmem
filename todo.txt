@@ -10,8 +10,9 @@
 [10]  Write log				DONE
 [11]  Replace signal with sigaction	????
 [12]  getopt				DONE
-[13]  Options: no ansi, log only
-[13]  Autoconf
+[13]  Options: no ansi, log only	DONE
+[14]  Options: full usage text
+[15]  Autoconf
 
 
 
