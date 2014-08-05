@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +20,6 @@ const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
 const char *ctrl_green = "\x1B[32m";
 const char *ctrl_red = "\x1B[31m";
 const char *ctrl_reset = "\x1B[0m";
-const char *const version = "1.0.0-rc3";
 
 int cstate = 0, status =0;
 struct timeval tv[2];	// START, LAST
@@ -29,7 +29,7 @@ enum { SZ, RSS };
 
 int main(int argc, char *argv[])
 {
-	char statfile[24], headtext[80], logfile[32], header[WIDTH], *pname = NULL;
+	char statfile[32], headtext[96], logfile[64], header[WIDTH], *pname = NULL;
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
 	time_t hitime, deltasec;
 	pid_t pid = 0;
@@ -51,12 +51,12 @@ int main(int argc, char *argv[])
 		switch(opt){
 			case 'p':
 				pid = atoi(optarg);
-				snprintf(statfile, 24, "/proc/%d/status", pid);
+				snprintf(statfile, 32, "/proc/%d/status", pid);
 				if(!(fp = fopen(statfile, "r"))){
 					fprintf(stderr, "Unable to open %s.\n", statfile);
 					exit(EXIT_FAILURE);
 				}
-				pname = (char *)malloc(sizeof(char)*48);
+				pname = (char *)malloc(sizeof(char)*64);
 				fscanf(fp, "Name: %s", pname);
 				fclose(fp);
 				break;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	}
 
 	if(logflag){
-		snprintf(logfile, 32, "%s.%d.log", pname, pid);
+		snprintf(logfile, 64, "%s.%d.log", pname, pid);
 		if(!(logfp = fopen(logfile, "w"))){
 			perror(logfile);
 			exit(EXIT_FAILURE);
@@ -116,8 +116,7 @@ int main(int argc, char *argv[])
 	signal(SIGCHLD, sigchld_handler);
 
 	if(!silent){
-//		headtextlen = snprintf(headtext, 80, " \x1B[32m[ PeakMem %s (%d) ]\x1B[0m ", pname, pid);
-		headtextlen = snprintf(headtext, 80, " %s[ PeakMem %s (%d) ]%s ",ctrl_green, pname, pid, ctrl_reset);
+		headtextlen = snprintf(headtext, 96, " %s[ PeakMem %s (%d) ]%s ",ctrl_green, pname, pid, ctrl_reset);
 
 		char *p = header;
 		for(int i=0; i<WIDTH-1; i++){
@@ -176,12 +175,10 @@ int main(int argc, char *argv[])
 	putchar('\n');
 
 	if(WIFEXITED(status)){
-//		printf("\x1B[32m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02u:%02u:%02u) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
 		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n", ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
-//		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
 		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
 	}
 
@@ -257,7 +254,7 @@ int writeLog(FILE *fp, const struct keystate *const states, const time_t deltase
 
 void fullUsage(FILE *fp, int exitcode)
 {
-	fprintf(fp, "PeakMem version %s\n", version);
+	fprintf(fp, "PeakMem version %s\n", PACKAGE_VERSION);
 	fprintf(fp, usage, "PeakMem");
 	fprintf(fp,
 		"    <program>               Launch and monitor <program>.\n"

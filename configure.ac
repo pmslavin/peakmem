@@ -3,6 +3,7 @@
 
 AC_PREREQ([2.66])
 AC_INIT([peakmem], [1.0.0], [slavinp@cs.man.ac.uk])
+AM_INIT_AUTOMAKE([peakmem], [1.0.0])
 AC_CONFIG_SRCDIR([src/peakmem.h])
 AC_CONFIG_HEADERS([config.h])
 
@@ -24,4 +25,4 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday strchr strrchr])
 
-AC_OUTPUT
+AC_OUTPUT([Makefile src/Makefile])
