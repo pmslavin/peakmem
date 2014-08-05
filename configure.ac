@@ -13,11 +13,12 @@ AC_PROG_CC
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h unistd.h sys/ptrace.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
+# sys_siglist is extern.
 AC_CHECK_DECLS([sys_siglist])
 
 # Checks for library functions.
