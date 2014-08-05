@@ -12,7 +12,8 @@
 [12]  getopt				DONE
 [13]  Options: no ansi, log only	DONE
 [14]  Options: full usage text		DONE
-[15]  Autoconf
+[15]  Autoconf branch			DONE
+[16]  ptrace child process		DONE
 
 
 

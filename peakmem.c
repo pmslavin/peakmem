@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
+#include <sys/ptrace.h>
 #include <errno.h>
 #include <limits.h>
 #include <signal.h>
@@ -15,21 +16,22 @@
 
 extern const char *const sys_siglist[];
 const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
+const int STATFILE_LEN = 32, HEADTEXT_LEN = 96, LOGFILE_LEN = 96;
 const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
 const char *ctrl_green = "\x1B[32m";
 const char *ctrl_red = "\x1B[31m";
 const char *ctrl_reset = "\x1B[0m";
 const char *const version = "1.0.0-rc3";
 
-int cstate = 0, status =0;
-struct timeval tv[2];	// START, LAST
+static int cstate = 0, status = 0;
+static struct timeval tv[2];	// START, LAST
 enum { START, LAST };
 enum { SZ, RSS };
 
 
 int main(int argc, char *argv[])
 {
-	char statfile[24], headtext[80], logfile[32], header[WIDTH], *pname = NULL;
+	char statfile[STATFILE_LEN], headtext[HEADTEXT_LEN], logfile[LOGFILE_LEN], header[WIDTH], *pname = NULL;
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
 	time_t hitime, deltasec;
 	pid_t pid = 0;
@@ -51,12 +53,12 @@ int main(int argc, char *argv[])
 		switch(opt){
 			case 'p':
 				pid = atoi(optarg);
-				snprintf(statfile, 24, "/proc/%d/status", pid);
+				snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 				if(!(fp = fopen(statfile, "r"))){
 					fprintf(stderr, "Unable to open %s.\n", statfile);
 					exit(EXIT_FAILURE);
 				}
-				pname = (char *)malloc(sizeof(char)*48);
+				pname = (char *)malloc(sizeof(char)*64);
 				fscanf(fp, "Name: %s", pname);
 				fclose(fp);
 				break;
@@ -79,6 +81,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
+
 	if(!pid){
 	       	if(optind >= argc){
 			fprintf(stderr, "Program to monitor expected.\n");
@@ -92,14 +95,26 @@ int main(int argc, char *argv[])
 
 		pid = fork();
 		if(!pid){
+			ptrace(PTRACE_TRACEME, 0, NULL, NULL);
 			execvp(argv[optind], &argv[optind]);
 			exit(EXIT_FAILURE);
+		}else{
+			waitpid(pid, &status, 0);	/* wait() the SIGSTOP on exec... */
+			/* then wait() potential exit... */
+			if(waitpid(pid, &status, WNOHANG)){
+				fprintf(stderr, "Error: Unable to run %s\n", argv[optind]);
+				exit(EXIT_FAILURE);
+			}
+			/* ...then restart the child. */
+			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+			signal(SIGCHLD, sigchld_handler);
+			cstate = 1;
 		}
 
 	}
 
 	if(logflag){
-		snprintf(logfile, 32, "%s.%d.log", pname, pid);
+		snprintf(logfile, LOGFILE_LEN, "%s.%d.log", pname, pid);
 		if(!(logfp = fopen(logfile, "w"))){
 			perror(logfile);
 			exit(EXIT_FAILURE);
@@ -111,13 +126,10 @@ int main(int argc, char *argv[])
 	}
 
 	gettimeofday(&tv[START], NULL);
-	snprintf(statfile, 24, "/proc/%d/status", pid);
-
-	signal(SIGCHLD, sigchld_handler);
+	snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 
 	if(!silent){
-//		headtextlen = snprintf(headtext, 80, " \x1B[32m[ PeakMem %s (%d) ]\x1B[0m ", pname, pid);
-		headtextlen = snprintf(headtext, 80, " %s[ PeakMem %s (%d) ]%s ",ctrl_green, pname, pid, ctrl_reset);
+		headtextlen = snprintf(headtext, HEADTEXT_LEN, " %s[ PeakMem %s (%d) ]%s ",ctrl_green, pname, pid, ctrl_reset);
 
 		char *p = header;
 		for(int i=0; i<WIDTH-1; i++){
@@ -125,7 +137,7 @@ int main(int argc, char *argv[])
 		}
 		*p = 0;
 
-//		-9 = uptime column, +3 = escape code correction
+		/* -9 = uptime column, +3 = escape code correction */
 		headidx = (WIDTH-9)/2 - headtextlen/2 + offset_ctrl;
 		p = &header[headidx];
 		strncpy(p, headtext, headtextlen);
@@ -134,8 +146,6 @@ int main(int argc, char *argv[])
 		puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
 		puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
 	}
-
-	cstate = 1;
 
 	while(cstate){
 
@@ -176,12 +186,10 @@ int main(int argc, char *argv[])
 	putchar('\n');
 
 	if(WIFEXITED(status)){
-//		printf("\x1B[32m[PeakMem] %s (%d)\x1B[0m    Normal exit (%02u:%02u:%02u) with status: %d\n", pname, pid, hours, mins, secs, WEXITSTATUS(status));
 		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n", ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
-//		printf("\x1B[31m[PeakMem] %s (%d)\x1B[0m    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", pname, pid, hours, mins, secs, signo, sys_siglist[signo]);
 		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
 	}
 
