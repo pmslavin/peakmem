@@ -13,4 +13,8 @@ int writeBanner(FILE *, const struct keystate *, const time_t);
 int writeLog(FILE *, const struct keystate *, const time_t);
 void fullUsage(FILE *, int);
 
+#if defined(HAVE_DECL_STRSIGNAL)
+extern char *strsignal(int);
+#endif
+
 #endif

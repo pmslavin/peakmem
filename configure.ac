@@ -13,17 +13,22 @@ AC_PROG_CC
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h unistd.h sys/ptrace.h])
+AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h sys/wait.h])
+AC_CHECK_HEADERS([unistd.h sys/ptrace.h signal.h getopt.h sys/types.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 # sys_siglist is extern.
-AC_CHECK_DECLS([sys_siglist])
-
+AC_CHECK_DECLS([sys_siglist, optarg, optind, strsignal])
+AC_CHECK_DECLS([waitpid],,,[#include <sys/wait.h>])
+AC_CHECK_DECLS([nanosleep],,,[#define _POSIX_C_SOURCE 199309L
+#include <time.h>])
 # Checks for library functions.
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday strchr strrchr])
+AC_CONFIG_FILES([Makefile
+                 src/Makefile])
 
-AC_OUTPUT([Makefile src/Makefile])
+AC_OUTPUT
