@@ -1,0 +1,14 @@
+PeakMem monitors the memory use of programs.
+
+The following files are included in the distribution:
+
+AUTHORS: A list of authors and other contributors.
+
+INSTALL: Instructions to build and install PeakMem.
+
+COPYING: License information.
+
+
+Please send bug reports and feature suggestions to:
+
+Paul Slavin <slavinp@cs.man.ac.uk>

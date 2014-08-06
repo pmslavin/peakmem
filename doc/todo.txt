@@ -12,7 +12,11 @@
 [12]  getopt				DONE
 [13]  Options: no ansi, log only	DONE
 [14]  Options: full usage text		DONE
-[15]  Autoconf
+[15]  Autoconf branch			DONE
+[16]  ptrace child process		DONE
+[17]  usleep => nanosleep	_GNU	DONE
+[18]  sys_siglist => strsignal	_GNU	DONE
+[19]  docs, mans, webpage
 
 
 
