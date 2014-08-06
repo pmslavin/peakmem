@@ -1,10 +1,20 @@
-#define _GNU_SOURCE
+#define HAVE_DECL_NANOSLEEP 1
+#define HAVE_DECL_STRSIGNAL 1
+
+#if defined(HAVE_DECL_NANOSLEEP)
+# define _POSIX_C_SOURCE	199309L
+#else
+# define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#if defined(HAVE_DECL_NANOSLEEP)
+# include <time.h>
+#endif
 #include <sys/time.h>
 #include <sys/ptrace.h>
 #include <errno.h>
@@ -14,7 +24,17 @@
 
 #include "peakmem.h"
 
+#if !defined(HAVE_DECL_SYS_SIGLIST)
 extern const char *const sys_siglist[];
+#endif
+
+/* Old libc versions may not declare these getopt vars.. */
+#if !defined(HAVE_DECL_OPTARG)
+extern char *optarg;
+#endif
+#if !defined(HAVE_DECL_OPTIND)
+extern int optind;
+#endif
 const int HZ = 5, KEYCOUNT = 2, WIDTH = 112;
 const int STATFILE_LEN = 32, HEADTEXT_LEN = 96, LOGFILE_LEN = 96;
 const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
@@ -33,7 +53,7 @@ int main(int argc, char *argv[])
 {
 	char statfile[STATFILE_LEN], headtext[HEADTEXT_LEN], logfile[LOGFILE_LEN], header[WIDTH], *pname = NULL;
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
-	time_t hitime, deltasec;
+	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
 	int key, opt, logflag = 0, silent = 0, offset_ctrl = 3;
 	size_t headtextlen, headidx;
@@ -81,7 +101,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
 	if(!pid){
 	       	if(optind >= argc){
 			fprintf(stderr, "Program to monitor expected.\n");
@@ -106,7 +125,12 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			/* ...then restart the child. */
-			ptrace(PTRACE_DETACH, pid, NULL, NULL);
+			if(ptrace(PTRACE_DETACH, pid, NULL, NULL)){
+				if(errno == ESRCH){
+					perror("detach: no child process");
+					exit(EXIT_FAILURE);
+				}
+			}
 			signal(SIGCHLD, sigchld_handler);
 			cstate = 1;
 		}
@@ -176,7 +200,12 @@ int main(int argc, char *argv[])
 		if(!silent)
 			writeBanner(stdout, states, deltasec);
 
-		usleep(1000000/HZ);
+#if defined(HAVE_DECL_NANOSLEEP)
+		struct timespec tspec = {.tv_sec = 0, .tv_nsec = 1000000000L/HZ};
+		nanosleep(&tspec, NULL);
+#else
+		usleep(1000000/HZ);	/* POSIX shmosix */
+#endif
 	}
 
 	hours = deltasec/3600;
@@ -190,7 +219,11 @@ int main(int argc, char *argv[])
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
+#if defined(HAVE_DECL_STRSIGNAL)
+		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, strsignal(signo));
+#else
 		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
+#endif
 	}
 
 	if(logfp)
@@ -234,7 +267,9 @@ long long pollProc(const char *const statfile, const char *const key)
 void sigchld_handler(int signo)
 {
 	(void)signo;	// Unused
-	wait(&status);
+	if(wait(&status) == -1){
+		perror("wait error on sigchld");
+	}
 	cstate = 0;
 }
 
