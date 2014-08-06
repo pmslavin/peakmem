@@ -84,7 +84,8 @@ int main(int argc, char *argv[])
 				offset_ctrl = 0;
 				break;
 			case 's':
-				silent = 1; // Falls through...
+				silent = 1;
+				/* falls through.. */
 			case 'l':
 				logflag = 1;
 				break;
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
 		}
 		*p = 0;
 
-		/* -9 = uptime column, +3 = escape code correction */
+		/* -9 = uptime column; offset_ctrl = escape code correction */
 		headidx = (WIDTH-9)/2 - headtextlen/2 + offset_ctrl;
 		p = &header[headidx];
 		strncpy(p, headtext, headtextlen);

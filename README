@@ -1,5 +1,8 @@
 PeakMem monitors the memory use of programs.
 
+Full usage instructions can be found in doc/README-PeakMem.
+
+
 The following files are included in the distribution:
 
 AUTHORS: A list of authors and other contributors.

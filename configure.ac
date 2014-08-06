@@ -2,6 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.66])
+AC_CONFIG_AUX_DIR([aconfig])
 AC_INIT([peakmem], [1.0.0], [slavinp@cs.man.ac.uk])
 AM_INIT_AUTOMAKE([peakmem], [1.0.0])
 AC_CONFIG_SRCDIR([src/peakmem.h])
