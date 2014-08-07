@@ -1,1 +1,1 @@
-man_MANS = peakmem.1
+dist_man1_MANS = peakmem.1
