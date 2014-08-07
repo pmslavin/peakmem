@@ -2,6 +2,9 @@ PeakMem monitors the memory use of programs.
 
 Full usage instructions can be found in doc/README-PeakMem.
 
+***If acquiring the source from git, please be sure to read
+(and run) the fix-git-timestamps.sh script if you
+encounter problems with make.***
 
 The following files are included in the distribution:
 
