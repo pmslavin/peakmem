@@ -1,0 +1,106 @@
+.\" Copyright (C) 2014 Paul Slavin <slavinp@cs.man.ac.uk>
+.\"
+.\" Permission is granted to make and distribute verbatim copies of this
+.\" manual provided the copyright notice and this permission notice are
+.\" preserved on all copies.
+.\"
+.\" Permission is granted to copy and distribute modified versions of this
+.\" manual under the conditions for verbatim copying, provided that the
+.\" entire resulting derived work is distributed under the terms of a
+.\" permission notice identical to this one.
+.\"
+.\" Formatted or processed versions of this manual, if unaccompanied by
+.\" the source, must acknowledge the copyright and authors of this work.
+.\"
+.\" 2014-08-07, initial PeakMem man
+.\"
+.TH PEAKMEM 3 2014-08-07 "PeakMem" "PeakMem Manual"
+.SH NAME
+peakmem \- monitor memory usage
+.SH SYNOPSIS
+.nf
+\fBPeakMem\fR [\fB-l\fR|\fB-s\fR] [\fB-n\fR] \fB-p\fR \fIpid\fR | \fIprogram\fR
+.sp
+.fi
+.SH DESCRIPTION
+.BR PeakMem
+monitors, displays, and optionally writes to a log, the memory usage
+characteristics of a program.
+
+.BR PeakMem
+operates in two main ways, it can either:
+.sp
+[1]  Launch a program from invocation
+        -  e.g. $ peakmem \fIprogram\fR
+.sp
+   ...or...
+.sp
+[2]  Attach to an already-running program by specifying its pid
+        -  e.g. $ peakmem -p \fIpid\fR
+
+
+In the former case, the program may be anywhere in the shell's
+.BR $PATH
+or may be specified absolutely.  In the latter case, the pid
+of an executing process may be acquired from the shell, or via
+.BR psgrep
+,
+.BR ps(1)
+,
+.BR top(1)
+, etc.
+.SH USAGE
+.BR PeakMem
+provides several usage options:
+
+Usage: PeakMem  [\fB-l\fR|\fB-s\fR] [\fB-n\fR] \fB-p\fR \fIpid\fR | \fIprogram\fR
+    \fIprogram\fR               Launch and monitor \fIprogram\fR
+
+    \fB-p\fR \fIpid\fR                Attach to existing process \fIpid\fR
+
+    \fB-l\fR                    Write log file during operation.
+
+    \fB-s\fR                    Print no output to terminal, implies \fB-l\fR.
+
+    \fB-n\fR                    Disable ANSI colour for terminal output.
+
+    \fB-h\fR                    Print this help.
+.SH LOGGING
+The \fB-l\fR switch causes \fBPeakMem\fR to write a logfile during
+monitoring of the program.
+
+
+This logfile is in the following format:
+
+    # "PeakMem: cubedsphere-mc48.31517.log"
+    # Seconds:VmPeak:VmSize:VmHWM:VmRSS
+          0 1009052 1009052 1144 1144
+    ...
+
+where the first line contains the program's name and pid, and
+the subsequent lines contain data corresponding to the 
+\fISeconds:VmPeak:VmSize:VmHWM:VmRSS\fR columns.
+
+This format is suited to plotting with \fBGNUplot\fR, and a sample script
+to generate a plot is provided (\fIoutput.plot\fR) along with sample data
+(\fIcubedsphere-mc48.31517.log\fR) in the \fBplot/\fR directory of this
+distribution.
+
+As an example, \fBGNUplot\fR may be invoked with:
+
+    $ gnuplot -p output.plot < cubedsphere-mc48.31517.log
+
+to generate a plot on the terminal.  The \fIoutput.plot\fR file may
+be customised as required.
+.SH ABOUT
+The \fBPeakMem\fR homepage is \fIhttp://www.cs.man.ac.uk/~slavinp/peakmem.html\fR
+and the latest version is also available from
+\fIhttps://github.com/pmslavin/peakmem\fR
+.SH "SEE ALSO"
+.BR proc (5),
+.SH COLOPHON
+PeakMem was produced as part of the
+\fI"Next-Generation Weather & Climate Prediction"\fR
+programme by
+\fIPaul\ Slavin\fR <slavinp@cs.man.ac.uk>
+of The University of Manchester.

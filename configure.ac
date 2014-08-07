@@ -29,7 +29,6 @@ AC_CHECK_DECLS([nanosleep],,,[#define _POSIX_C_SOURCE 199309L
 AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([gettimeofday strchr strrchr])
-AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile man/Makefile])
 
 AC_OUTPUT

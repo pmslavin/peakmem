@@ -78,6 +78,7 @@ int main(int argc, char *argv[])
 				pname = (char *)malloc(sizeof(char)*64);
 				fscanf(fp, "Name: %s", pname);
 				fclose(fp);
+				cstate = 1;
 				break;
 			case 'n':
 				ctrl_green = ctrl_red = ctrl_reset = "";
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
 				break;
 			case 's':
 				silent = 1;
-				/* falls through.. */
+				/* falls through */
 			case 'l':
 				logflag = 1;
 				break;
@@ -264,7 +265,7 @@ long long pollProc(const char *const statfile, const char *const key)
 
 void sigchld_handler(int signo)
 {
-	(void)signo;	// Unused
+	(void)signo;	/* Unused */
 	if(wait(&status) == -1){
 		perror("wait error on sigchld");
 	}
