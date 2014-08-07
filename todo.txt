@@ -16,6 +16,7 @@
 [16]  ptrace child process		DONE
 [17]  usleep => nanosleep	_GNU	DONE
 [18]  sys_siglist => strsignal	_GNU	DONE
+[19]  docs, mans, webpage		DONE
 
 
 

@@ -41,7 +41,9 @@ const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
 const char *ctrl_green = "\x1B[32m";
 const char *ctrl_red = "\x1B[31m";
 const char *ctrl_reset = "\x1B[0m";
-const char *const version = "1.0.0-rc3";
+#if !defined(PACKAGE_VERSION)
+const char *const PACKAGE_VERSION = "1.0.0-rc3";
+#endif
 
 static int cstate = 0, status = 0;
 static struct timeval tv[2];	// START, LAST
@@ -266,7 +268,7 @@ long long pollProc(const char *const statfile, const char *const key)
 
 void sigchld_handler(int signo)
 {
-	(void)signo;	// Unused
+	(void)signo;	/* Unused */
 	if(wait(&status) == -1){
 		perror("wait error on sigchld");
 	}
@@ -300,7 +302,7 @@ int writeLog(FILE *fp, const struct keystate *const states, const time_t deltase
 
 void fullUsage(FILE *fp, int exitcode)
 {
-	fprintf(fp, "PeakMem version %s\n", version);
+	fprintf(fp, "PeakMem version %s\n", PACKAGE_VERSION);
 	fprintf(fp, usage, "PeakMem");
 	fprintf(fp,
 		"    <program>               Launch and monitor <program>.\n"
