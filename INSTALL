@@ -1,0 +1,16 @@
+Building PeakMem is simple:
+
+[1]  $  tar xzvf peakmem-1.0.0.tar.gz
+
+[2]  $ cd peakmem-1.0.0/
+
+[3]  $ ./configure
+	- Provide PREFIX and build options as required.
+
+[4]  $ make
+	- A "$ make check" target is also provided.
+
+[5]  $ make install
+
+
+PeakMem is now available at $PREFIX/bin/peakmem

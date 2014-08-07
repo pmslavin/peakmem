@@ -1,0 +1,14 @@
+PeakMem was developed as part of the Next-Generation Weather and
+Climate Prediction (Gung-Ho) project by:
+
+Paul Slavin <slavinp@cs.man.ac.uk>  University of Manchester
+
+...and was originally used to monitor the memory requirements of
+generating large cubed-sphere meshes for numerical finite-element
+codes.
+
+
+With thanks for feedback to:
+
+Graham Riley (University of Manchester)
+Mike Rezny (Met Office)

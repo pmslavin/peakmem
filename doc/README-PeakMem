@@ -1,0 +1,114 @@
+ABOUT
+=====
+
+PeakMem monitors, displays, and optionally writes to a log, the memory usage
+characteristics of a program.
+
+PeakMem operates in two main ways, it can either:
+
+[1]  Launch a program from invocation
+	-  e.g. $ peakmem <program>
+
+...or...
+
+[2]  Attach to an already-running program by specifying its pid
+	-  e.g. $ peakmem -p <pid>
+
+
+In the former case, the program may be anywhere in the shell's $PATH or may
+be specified absolutely.  In the latter case, the pid of an executing process
+may be acquired from the shell, or via psgrep, ps, top, etc.
+
+
+USAGE
+=====
+
+PeakMem provides several usage options:
+
+Usage: PeakMem [-l|-s] [-n] -p <pid> | <program>
+    <program>               Launch and monitor <program>.
+    -p <pid>                Attach to existing process <pid>.
+    -l                      Write log file during operation.
+    -s                      Print no output to terminal, implies -l.
+    -n                      Disable ANSI colour for terminal output.
+    -h                      Print this help.
+
+
+
+OUTPUT
+======
+
+By default, PeakMem writes a banner to the terminal reporting the memory use
+of the program it is monitoring.  For example, from monitoring an xterm process
+the output is:
+
+
+                                     [ PeakMem xterm (18938) ]                                        
+---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -
+   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         
+       12604   00:00:00        11768        12604 |        6428   00:00:02         5160         6428 | 00:00:03
+
+
+
+Legend
+======
+
+[ PeakMem xterm (18938) ]	=> Process name and pid
+Uptime				=> Time since program launch, if $ peakmem <program>
+				   or time attached to pid, if $ peakmem -p <pid>
+
+VmSize:	LAST kB			=> Current Virtual Memory allocated to process.
+
+VmSize:	AVG kB			=> Mean Virtual Memory allocated to process over
+				   period of monitoring.
+
+VmPeak kB  (time)		=> Largest recorded VM allocation to process, and
+				   time (see uptime) at which this was recorded.
+
+VmRSS: LAST kB			=> Current Resident Set Size of process.
+
+VmRSS: AVG kB			=> Mean Resident Set Size of process over period
+				   of monitoring.
+
+VmHWM kB  (time)		=> Highest RSS recorded ('High Water Mark') by
+				   monitored process and time (see uptime) at
+				   which this was recorded.
+
+
+In addition, on exit of the monitored process, PeakMem displays the total
+monitored uptime, the exit code and the ID of any signal which terminated
+the process.  For example...
+
+[PeakMem] xterm (18938)    Normal exit (00:00:03) with status: 0
+...or...
+[PeakMem] xterm (19070)    Terminated (00:00:10) by signal: 9 (Killed)
+
+
+LOGGING
+=======
+
+The -l switch causes PeakMem to write a logfile during monitoring
+of the program.  This logfile is in the following format:
+
+# "PeakMem: cubedsphere-mc48.31517.log"
+#Seconds:VmPeak:VmSize:VmHWM:VmRSS
+0 1009052 1009052 1144 1144
+...
+
+
+...where the first line contains the program's name and pid, and
+the subsequent lines contain data corresponding to the 
+Seconds:VmPeak:VmSize:VmHWM:VmRSS columns.
+
+
+This format is suited to plotting with GNUplot, and a sample script
+to generate a plot is provided (output.plot) along with sample data
+(cubedsphere-mc48.31517.log) in the plot/ directory of this
+distribution.
+
+GNUplot may be invoked with:
+
+$ gnuplot -p output.plot < cubedsphere-mc48.31517.log
+
+...to generate a plot on the terminal.  The output.plot file may
+be customised as required.

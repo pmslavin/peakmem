@@ -1,12 +1,9 @@
-/* Simulate config.h */
-#define HAVE_DECL_NANOSLEEP 1
-#define HAVE_DECL_STRSIGNAL 1
-
 #if defined(HAVE_DECL_NANOSLEEP)
 # define _POSIX_C_SOURCE	199309L
 #else
 # define _GNU_SOURCE
 #endif
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
