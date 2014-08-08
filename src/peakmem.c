@@ -1,3 +1,29 @@
+/* Copyright (C) 2014 Paul Slavin <slavinp@cs.man.ac.uk>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #if defined(HAVE_DECL_NANOSLEEP)
 # define _POSIX_C_SOURCE	199309L
 #else
@@ -51,7 +77,8 @@ enum { SZ, RSS };
 
 int main(int argc, char *argv[])
 {
-	char statfile[STATFILE_LEN], headtext[HEADTEXT_LEN], logfile[LOGFILE_LEN], header[WIDTH], *pname = NULL;
+	char statfile[STATFILE_LEN], headtext[HEADTEXT_LEN], logfile[LOGFILE_LEN], header[WIDTH];
+	char *strend = NULL, *pname = NULL;
 	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
 	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
@@ -72,7 +99,11 @@ int main(int argc, char *argv[])
 	while((opt = getopt(argc, argv, "np:lsh")) != -1){
 		switch(opt){
 			case 'p':
-				pid = atoi(optarg);
+				pid = (pid_t)strtol(optarg, &strend, 10);
+				if (errno || *strend || pid < 0 || (long)(int)pid != pid){
+					fprintf(stderr, "Invalid pid \"%s\".\n", optarg);
+					exit(EXIT_FAILURE);
+				}
 				snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 				if(!(fp = fopen(statfile, "r"))){
 					fprintf(stderr, "Unable to open %s.\n", statfile);
@@ -217,14 +248,17 @@ int main(int argc, char *argv[])
 	putchar('\n');
 
 	if(WIFEXITED(status)){
-		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n", ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
+		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n", \
+			ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
 	
 	} else if(WIFSIGNALED(status)){
 		int signo = WTERMSIG(status);
 #if defined(HAVE_DECL_STRSIGNAL)
-		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, strsignal(signo));
+		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", \
+			ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, strsignal(signo));
 #else
-		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
+		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", \
+			ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
 #endif
 	}
 
@@ -242,7 +276,7 @@ long long pollProc(const char *const statfile, const char *const key)
 	long long last =-1L;
 
 	char *head = strchr(key, ':');
-	const char *const readerr = "Unable to read %s: child process not created.\n";
+	const char *const readerr = "Unable to read %s\n";
 	int idx = head - key;
 
 	if(!(fp = fopen(statfile, "r"))){
