@@ -70,16 +70,16 @@ const char *const PACKAGE_VERSION = "1.0.0-rc3";
 #endif
 
 static int cstate = 0, status = 0;
-static struct timeval tv[2];	// START, LAST
-enum { START, LAST };
-enum { SZ, RSS };
+static struct timeval tv[2];	/* START, LAST */
+enum {START, LAST};
+enum {SZ, RSS};
 
 
 int main(int argc, char *argv[])
 {
 	char statfile[STATFILE_LEN], headtext[HEADTEXT_LEN], logfile[LOGFILE_LEN], header[WIDTH];
 	char *strend = NULL, *pname = NULL;
-	unsigned int count = 0, hours = 0, mins = 0, secs = 0;
+	unsigned int count = 0;
 	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
 	int key, opt, logflag = 0, silent = 0, offset_ctrl = 3;
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
 	FILE *fp = NULL, *logfp = NULL;
 
 	struct keystate states[2] = {
-		{-1L, 0L, -1L, 0, 0, 0, "VmSize: %lld kB"},	// SZ
-		{-1L, 0L, -1L, 0, 0, 0, "VmRSS: %lld kB"}	// RSS
+		{-1L, 0L, -1L, 0, 0, 0, "VmSize: %lld kB"},	/* SZ */
+		{-1L, 0L, -1L, 0, 0, 0, "VmRSS: %lld kB"}	/* RSS */
 	};
 
 	if(argc == 1){
@@ -186,12 +186,13 @@ int main(int argc, char *argv[])
 	snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 
 	if(!silent){
-		headtextlen = snprintf(headtext, HEADTEXT_LEN, " %s[ PeakMem %s (%d) ]%s ",ctrl_green, pname, pid, ctrl_reset);
+		headtextlen = snprintf(headtext, HEADTEXT_LEN, " %s[ PeakMem %s (%d) ]%s ",
+				ctrl_green, pname, pid, ctrl_reset);
 
 		char *p = header;
-		for(int i=0; i<WIDTH-1; i++){
+		for(int i=0; i<WIDTH-1; i++)
 			*p++ = ' ';
-		}
+		
 		*p = 0;
 
 		/* -9 = uptime column; +offset_ctrl = escape code correction */
@@ -205,7 +206,6 @@ int main(int argc, char *argv[])
 	}
 
 	while(cstate){
-
 		for(key=0; key<KEYCOUNT; key++){
 			states[key].last = pollProc(statfile, states[key].key);
 		}
@@ -215,10 +215,10 @@ int main(int argc, char *argv[])
 
 		for(key=0; key<KEYCOUNT; key++){
 			if(states[key].last > states[key].hi){
-				states[key].hi = states[key].last;
 				hitime = deltasec;
+				states[key].hi = states[key].last;
 				states[key].hi_hours = hitime/3600;
-				states[key].hi_mins = (hitime-(3600*hours))/60;
+				states[key].hi_mins = (hitime-(3600*states[key].hi_hours))/60;
 				states[key].hi_secs = hitime % 60;
 			}
 
@@ -241,27 +241,8 @@ int main(int argc, char *argv[])
 #endif
 	}
 
-	hours = deltasec/3600;
-	mins = (deltasec-(3600*hours))/60;
-	secs = deltasec % 60;
-
 	putchar('\n');
-
-	if(WIFEXITED(status)){
-		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n", \
-			ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
-	
-	} else if(WIFSIGNALED(status)){
-		int signo = WTERMSIG(status);
-#if defined(HAVE_DECL_STRSIGNAL)
-		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", \
-			ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, strsignal(signo));
-#else
-		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n", \
-			ctrl_red, pname, pid, ctrl_reset, hours, mins, secs, signo, sys_siglist[signo]);
-#endif
-	}
-
+	processExitStatus(status, pid, pname, deltasec);
 	if(logfp)
 		fclose(logfp);	
 
@@ -303,23 +284,22 @@ long long pollProc(const char *const statfile, const char *const key)
 void sigchld_handler(int signo)
 {
 	(void)signo;	/* Unused */
-	if(wait(&status) == -1){
+	if(wait(&status) == -1)
 		perror("wait error on sigchld");
-	}
+	
 	cstate = 0;
 }
 
 
 int writeBanner(FILE *fp, const struct keystate *const states, const time_t deltasec)
 {
-
 	unsigned int hours = deltasec/3600;
 	unsigned int mins = (deltasec-(3600*hours))/60;
 	unsigned int secs = deltasec % 60;
 
-	int linelen = fprintf(fp, "\r  %10lld   %02u:%02u:%02u   %10lld   %10lld |  %10lld   %02u:%02u:%02u   %10lld   %10lld | %02u:%02u:%02u", states[SZ].hi, \
-				states[SZ].hi_hours, states[SZ].hi_mins, states[SZ].hi_secs, states[SZ].avg, states[SZ].last, \
-				states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs, states[RSS].avg, states[RSS].last, \
+	int linelen = fprintf(fp, "\r  %10lld   %02u:%02u:%02u   %10lld   %10lld |  %10lld   %02u:%02u:%02u   %10lld   %10lld | %02u:%02u:%02u",
+				states[SZ].hi, 	states[SZ].hi_hours, states[SZ].hi_mins, states[SZ].hi_secs, states[SZ].avg, states[SZ].last,
+				states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs, states[RSS].avg, states[RSS].last,
 				hours, mins, secs);
 
 	fflush(fp);
@@ -330,7 +310,11 @@ int writeBanner(FILE *fp, const struct keystate *const states, const time_t delt
 
 int writeLog(FILE *fp, const struct keystate *const states, const time_t deltasec)
 {
-	return fprintf(fp, "%u %lld %lld %lld %lld\n", (unsigned int)deltasec, states[SZ].hi, states[SZ].last, states[RSS].hi, states[RSS].last);
+	return fprintf(fp, "%u %lld %lld %lld %lld\n", (unsigned int)deltasec,
+							states[SZ].hi,
+							states[SZ].last,
+							states[RSS].hi,
+							states[RSS].last);
 }
 
 
@@ -348,4 +332,29 @@ void fullUsage(FILE *fp, int exitcode)
 	       );
 
 	exit(exitcode);
+}
+
+
+void processExitStatus(int status, pid_t pid, const char *const pname, const time_t deltasec)
+{
+	int hours = deltasec/3600;
+	int mins = (deltasec-(3600*hours))/60;
+	int secs = deltasec % 60;
+
+	if(WIFEXITED(status)){
+		printf("%s[PeakMem] %s (%d)%s    Normal exit (%02u:%02u:%02u) with status: %d\n",
+			ctrl_green, pname, pid, ctrl_reset, hours, mins, secs, WEXITSTATUS(status));
+	
+	}else if(WIFSIGNALED(status)){
+		int signo = WTERMSIG(status);
+		printf("%s[PeakMem] %s (%d)%s    Terminated (%02u:%02u:%02u) by signal: %d (%s)\n",
+			ctrl_red, pname, pid, ctrl_reset,
+			hours, mins, secs,
+#if defined(HAVE_DECL_STRSIGNAL)
+			signo, strsignal(signo));
+#else
+			signo, sys_siglist[signo]);
+#endif
+	}
+
 }

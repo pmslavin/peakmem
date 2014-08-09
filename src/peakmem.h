@@ -38,6 +38,7 @@ void sigchld_handler(int);
 int writeBanner(FILE *, const struct keystate *, const time_t);
 int writeLog(FILE *, const struct keystate *, const time_t);
 void fullUsage(FILE *, int);
+void processExitStatus(int, pid_t, const char *const pname, const time_t);
 
 #if defined(HAVE_DECL_STRSIGNAL)
 extern char *strsignal(int);
