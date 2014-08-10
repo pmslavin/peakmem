@@ -16,6 +16,7 @@ AC_PROG_CC
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h sys/wait.h])
 AC_CHECK_HEADERS([unistd.h sys/ptrace.h signal.h getopt.h sys/types.h])
+AC_CHECK_HEADERS([poll.h sys/poll.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_PID_T

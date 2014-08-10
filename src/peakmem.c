@@ -45,6 +45,13 @@
 #include <limits.h>
 #include <signal.h>
 #include <getopt.h>
+#include <termios.h>
+#if defined(HAVE_POLL_H)
+# include <poll.h>
+#endif
+#if defined(HAVE_SYS_POLL_H)
+# include <sys/poll.h>
+#endif
 
 #include "peakmem.h"
 
@@ -82,9 +89,12 @@ int main(int argc, char *argv[])
 	unsigned int count = 0;
 	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
-	int key, opt, logflag = 0, silent = 0, offset_ctrl = 3;
+	int logflag = 0, silent = 0, offset_ctrl = 3, pollret = 0;
+	int key, opt, kp;
 	size_t headtextlen, headidx;
 	FILE *fp = NULL, *logfp = NULL;
+	static struct termios prevtios, newtios;
+	struct pollfd fds;
 
 	struct keystate states[2] = {
 		{-1L, 0L, -1L, 0, 0, 0, "VmSize: %lld kB"},	/* SZ */
@@ -170,6 +180,15 @@ int main(int argc, char *argv[])
 
 	}
 
+	/* set terminal to raw and noecho */
+	tcgetattr(STDIN_FILENO, &prevtios);
+	newtios = prevtios;
+	newtios.c_lflag &= ~(ICANON | ECHO);
+	tcsetattr(STDIN_FILENO, TCSANOW, &newtios);
+
+	fds.fd = STDIN_FILENO;
+	fds.events = POLLIN;
+
 	if(logflag){
 		snprintf(logfile, LOGFILE_LEN, "%s.%d.log", pname, pid);
 		if(!(logfp = fopen(logfile, "w"))){
@@ -222,17 +241,30 @@ int main(int argc, char *argv[])
 				states[key].hi_secs = hitime % 60;
 			}
 
-			states[key].avg += (states[key].last-states[key].avg)/(count+1);
+			states[key].avg += (states[key].last-states[key].avg)/(deltasec+1);
 		}
 
 		if(logfp && !(count%HZ))
 			writeLog(logfp, states, deltasec);
 
+		pollret = poll(&fds, 1, 0);
+		if(pollret == -1){
+			perror("poll");
+			exit(EXIT_FAILURE);
+		}
+		if(pollret){
+			if((kp = getchar()) == 'q'){
+				if(logfp)
+					fclose(logfp);
+
+				tidyexit(logfp, &prevtios, 1, 0);
+			}
+		}
+
 		count++;
 
 		if(!silent)
 			writeBanner(stdout, states, deltasec);
-
 #if defined(HAVE_DECL_NANOSLEEP)
 		struct timespec tspec = {.tv_sec = 0, .tv_nsec = 1000000000L/HZ};
 		nanosleep(&tspec, NULL);
@@ -243,9 +275,9 @@ int main(int argc, char *argv[])
 
 	putchar('\n');
 	processExitStatus(status, pid, pname, deltasec);
-	if(logfp)
-		fclose(logfp);	
+	tidyexit(logfp, &prevtios, 0, 0);
 
+	/* this never happens... */
 	return 0;
 }
 
@@ -356,5 +388,15 @@ void processExitStatus(int status, pid_t pid, const char *const pname, const tim
 			signo, sys_siglist[signo]);
 #endif
 	}
+}
 
+void tidyexit(FILE *logfp, struct termios *ttystate, int exitonkp, int exitcode)
+{
+	tcsetattr(STDIN_FILENO, TCSANOW, ttystate);
+	if(exitonkp)
+		putchar('\n');
+	if(logfp)
+		fclose(logfp);	
+
+	exit(exitcode);
 }
