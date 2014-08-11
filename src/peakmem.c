@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
 	int logflag = 0, silent = 0, offset_ctrl = 3, pollret = 0;
-	int key, opt, kp;
+	int key, opt;
 	size_t headtextlen, headidx;
 	FILE *fp = NULL, *logfp = NULL;
 	static struct termios prevtios, newtios;
@@ -177,7 +177,6 @@ int main(int argc, char *argv[])
 			signal(SIGCHLD, sigchld_handler);
 			cstate = 1;
 		}
-
 	}
 
 	/* set terminal to raw and noecho */
@@ -252,8 +251,8 @@ int main(int argc, char *argv[])
 			perror("poll");
 			exit(EXIT_FAILURE);
 		}
-		if(pollret){
-			if((kp = getchar()) == 'q'){
+		if(pollret && fds.revents & POLLIN){
+			if(getchar() == 'q'){
 				if(logfp)
 					fclose(logfp);
 
