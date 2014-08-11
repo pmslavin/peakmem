@@ -204,6 +204,7 @@ int main(int argc, char *argv[])
 	snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 
 	if(!silent){
+		fputs("\x1B[?25l", stdout);	 /* Disable cursor */
 		headtextlen = snprintf(headtext, HEADTEXT_LEN, " %s[ PeakMem %s (%d) ]%s ",
 				ctrl_green, pname, pid, ctrl_reset);
 
@@ -252,12 +253,9 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		if(pollret && fds.revents & POLLIN){
-			if(getchar() == 'q'){
-				if(logfp)
-					fclose(logfp);
-
+			if(getchar() == 'q')
 				tidyexit(logfp, &prevtios, 1, 0);
-			}
+			
 		}
 
 		count++;
@@ -392,6 +390,7 @@ void processExitStatus(int status, pid_t pid, const char *const pname, const tim
 void tidyexit(FILE *logfp, struct termios *ttystate, int exitonkp, int exitcode)
 {
 	tcsetattr(STDIN_FILENO, TCSANOW, ttystate);
+	fputs("\x1B[?25h", stdout);	/* Reset cursor */
 	if(exitonkp)
 		putchar('\n');
 	if(logfp)
