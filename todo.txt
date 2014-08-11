@@ -17,7 +17,9 @@
 [17]  usleep => nanosleep	_GNU	DONE
 [18]  sys_siglist => strsignal	_GNU	DONE
 [19]  docs, mans, webpage		DONE
-
+[20]  poll() keypress			DONE
+[21]  AVG semantics			DONE
+[22]  Child exit on parent kill		????
 
 
 
