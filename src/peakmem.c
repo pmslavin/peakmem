@@ -84,14 +84,13 @@ enum {SZ, RSS};
 
 int main(int argc, char *argv[])
 {
-	char statfile[STATFILE_LEN], headtext[HEADTEXT_LEN], logfile[LOGFILE_LEN], header[WIDTH];
+	char statfile[STATFILE_LEN], logfile[LOGFILE_LEN];
 	char *strend = NULL, *pname = NULL;
 	unsigned int count = 0;
 	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
 	int logflag = 0, silent = 0, offset_ctrl = 3, pollret = 0;
 	int key, opt;
-	size_t headtextlen, headidx;
 	FILE *fp = NULL, *logfp = NULL;
 	static struct termios prevtios, newtios;
 	struct pollfd fds;
@@ -203,26 +202,8 @@ int main(int argc, char *argv[])
 	gettimeofday(&tv[START], NULL);
 	snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 
-	if(!silent){
-		fputs("\x1B[?25l", stdout);	 /* Disable cursor */
-		headtextlen = snprintf(headtext, HEADTEXT_LEN, " %s[ PeakMem %s (%d) ]%s ",
-				ctrl_green, pname, pid, ctrl_reset);
-
-		char *p = header;
-		for(int i=0; i<WIDTH-1; i++)
-			*p++ = ' ';
-		
-		*p = 0;
-
-		/* -9 = uptime column; +offset_ctrl = escape code correction */
-		headidx = (WIDTH-9)/2 - headtextlen/2 + offset_ctrl;
-		p = &header[headidx];
-		strncpy(p, headtext, headtextlen);
-
-		puts(header);
-		puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
-		puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
-	}
+	if(!silent)
+		writeHeaders(WIDTH, HEADTEXT_LEN, offset_ctrl, pid, pname);
 
 	while(cstate){
 		for(key=0; key<KEYCOUNT; key++){
@@ -397,4 +378,29 @@ void tidyexit(FILE *logfp, struct termios *ttystate, int exitonkp, int exitcode)
 		fclose(logfp);	
 
 	exit(exitcode);
+}
+
+
+void writeHeaders(const int width, const int headtext_len, int offset_ctrl, pid_t pid, const char *const pname)
+{	
+	char headtext[headtext_len], header[width];
+	int headtextlen, headidx;
+
+	fputs("\x1B[?25l", stdout);	 /* Disable cursor */
+	headtextlen = snprintf(headtext, headtext_len, " %s[ PeakMem %s (%d) ]%s ",
+						ctrl_green, pname, pid, ctrl_reset);
+	char *p = header;
+	for(int i=0; i<width-1; i++)
+		*p++ = ' ';
+	
+	*p = 0;
+
+	/* -9 = uptime column; +offset_ctrl = escape code correction */
+	headidx = (width-9)/2 - headtextlen/2 + offset_ctrl;
+	p = &header[headidx];
+	strncpy(p, headtext, headtextlen);
+
+	puts(header);
+	puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
+	puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
 }
