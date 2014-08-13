@@ -40,4 +40,8 @@ void tidyexit(FILE *, struct termios *, int, int);
 extern char *strsignal(int);
 #endif
 
+#if !defined(LINE_MAX)
+# define LINE_MAX 2048
+#endif
+
 #endif

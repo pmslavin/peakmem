@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
 	while((opt = getopt(argc, argv, "np:lsh")) != -1){
 		switch(opt){
 			case 'p':
+				errno = 0;
 				pid = (pid_t)strtol(optarg, &strend, 10);
 				if (errno || *strend || pid < 0 || (long)(int)pid != pid){
 					fprintf(stderr, "Invalid pid \"%s\".\n", optarg);
@@ -163,6 +164,7 @@ int main(int argc, char *argv[])
 				exit(EXIT_FAILURE);
 			}
 			/* ...then restart the child. */
+			errno = 0;
 			if(ptrace(PTRACE_DETACH, pid, NULL, NULL)){
 				if(errno == ESRCH){
 					perror("detach: no child process");
@@ -259,7 +261,7 @@ int main(int argc, char *argv[])
 long long pollProc(const char *const statfile, const char *const key)
 {
 	FILE *fp;
-	char linebuf[128];
+	char linebuf[LINE_MAX];
 	long long last =-1L;
 
 	char *head = strchr(key, ':');
@@ -272,7 +274,7 @@ long long pollProc(const char *const statfile, const char *const key)
 	}
 
 	while(!feof(fp)){
-		if(!fgets(linebuf, 128, fp)){
+		if(!fgets(linebuf, LINE_MAX, fp)){
 			fprintf(stderr, readerr, statfile);
 			exit(EXIT_FAILURE);
 		}
