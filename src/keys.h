@@ -24,20 +24,13 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _PEAKMEM_H_
-#define _PEAKMEM_H_
+#ifndef _KEYS_H_
+#define _KEYS_H_
 
-#include "keys.h"
-
-
-long long pollProc(const char *const, const char *const);
-void sigchld_handler(int);
-int writeLog(FILE *, const struct keystate *, const time_t);
-void processExitStatus(int, pid_t, const char *const, const time_t);
-void tidyexit(FILE *, struct termios *, int, int);
-
-#if defined(HAVE_DECL_STRSIGNAL)
-extern char *strsignal(int);
-#endif
+struct keystate{
+	long long last, avg, hi;
+	unsigned int hi_hours, hi_mins, hi_secs;
+	const char *const key;
+};
 
 #endif

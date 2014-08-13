@@ -3,8 +3,8 @@
 
 AC_PREREQ([2.66])
 AC_CONFIG_AUX_DIR([aconfig])
-AC_INIT([peakmem], [1.0.0], [slavinp@cs.man.ac.uk])
-AM_INIT_AUTOMAKE([peakmem], [1.0.0])
+AC_INIT([peakmem], [1.0.1], [slavinp@cs.man.ac.uk])
+AM_INIT_AUTOMAKE([peakmem], [1.0.1])
 AC_CONFIG_SRCDIR([src/peakmem.h])
 AC_CONFIG_HEADERS([config.h])
 
