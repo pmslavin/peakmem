@@ -124,6 +124,9 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* Read values from /proc/<pid>/status */
+#undef POLL_PROC_STATUS
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

@@ -711,6 +711,7 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 enable_dependency_tracking
+enable_poll_proc_status
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1337,6 +1338,8 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
+  --enable-poll-proc-status
+                          Enable alternate polling via /proc/<pid>/status
 
 Some influential environment variables:
   CC          C compiler command
@@ -3695,7 +3698,15 @@ fi
 
 
 
-# Checks for libraries.
+# Argument to allow alternate data source
+# Check whether --enable-poll-proc-status was given.
+if test "${enable_poll_proc_status+set}" = set; then :
+  enableval=$enable_poll_proc_status;
+$as_echo "#define POLL_PROC_STATUS 1" >>confdefs.h
+
+fi
+
+
 
 # Checks for header files.
 

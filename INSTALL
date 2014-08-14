@@ -6,6 +6,9 @@ Building PeakMem is simple:
 
 [3]  $ ./configure
 	- Provide PREFIX and build options as required.
+	- For portability, the --enable-poll-proc-status
+	  option allows /proc/<pid>/status to be read as
+	  an alternative to the default /proc/<pid>/statm
 
 [4]  $ make
 	- A "$ make check" target is also provided.

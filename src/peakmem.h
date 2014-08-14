@@ -29,8 +29,11 @@
 
 #include "keys.h"
 
-
+#if defined(POLL_PROC_STATUS)
 long long pollProc(const char *const, const char *const);
+#else
+long long pollProc_statm(const char *const, int);
+#endif
 void sigchld_handler(int);
 int writeLog(FILE *, const struct keystate *, const time_t);
 void processExitStatus(int, pid_t, const char *const, const time_t);

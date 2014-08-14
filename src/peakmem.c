@@ -70,7 +70,7 @@ extern int optind;
 const int HZ = 5, KEYCOUNT = 2;
 const int STATFILE_LEN = 32, LOGFILE_LEN = 96;
 #if !defined(PACKAGE_VERSION)
-const char *const PACKAGE_VERSION = "1.0.1-rc1";
+const char *const PACKAGE_VERSION = "1.0.1";
 #endif
 static int cstate = 0, status = 0;
 static struct timeval tv[2];	/* START, LAST */
@@ -80,7 +80,13 @@ enum {SZ, RSS};
 
 int main(int argc, char *argv[])
 {
-	char statfile[STATFILE_LEN], logfile[LOGFILE_LEN];
+	char statfile[STATFILE_LEN];	/* Still needed for pname */
+#if defined(POLL_PROC_STATUS)
+#else
+	char statmfile[STATFILE_LEN];
+	long pgsize;
+#endif
+	char logfile[LOGFILE_LEN];
 	char *strend = NULL, *pname = NULL;
 	unsigned int count = 0;
 	time_t hitime = 0, deltasec = 0;
@@ -172,6 +178,7 @@ int main(int argc, char *argv[])
 				}
 			}
 			signal(SIGCHLD, sigchld_handler);
+			snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 			cstate = 1;
 		}
 	}
@@ -197,17 +204,24 @@ int main(int argc, char *argv[])
 		fflush(logfp);
 	}
 
+#if defined(POLL_PROC_STATUS)
+#else
+	pgsize = sysconf(_SC_PAGESIZE);
+	snprintf(statmfile, STATFILE_LEN, "/proc/%d/statm", pid);
+#endif
 	gettimeofday(&tv[START], NULL);
-	snprintf(statfile, STATFILE_LEN, "/proc/%d/status", pid);
 
 	if(!silent)
 		writeHeaders(WIDTH, HEADTEXT_LEN, offset_ctrl, pid, pname);
 
 	while(cstate){
 		for(key=0; key<KEYCOUNT; key++){
+#if defined(POLL_PROC_STATUS)
 			states[key].last = pollProc(statfile, states[key].key);
+#else
+			states[key].last = pgsize/1024L*pollProc_statm(statmfile, key);
+#endif
 		}
-
 		gettimeofday(&tv[LAST], NULL);
 		deltasec = tv[LAST].tv_sec - tv[START].tv_sec;
 
@@ -219,7 +233,6 @@ int main(int argc, char *argv[])
 				states[key].hi_mins = (hitime-(3600*states[key].hi_hours))/60;
 				states[key].hi_secs = hitime % 60;
 			}
-
 			states[key].avg += (states[key].last-states[key].avg)/(deltasec+1);
 		}
 
@@ -258,6 +271,7 @@ int main(int argc, char *argv[])
 }
 
 
+#if defined(POLL_PROC_STATUS)
 long long pollProc(const char *const statfile, const char *const key)
 {
 	FILE *fp;
@@ -287,7 +301,39 @@ long long pollProc(const char *const statfile, const char *const key)
 	fclose(fp);
 	return last;
 }
+#else
+long long pollProc_statm(const char *const statmfile, int keyidx)
+{
+	FILE *fp;
+	int err;
+	long long last[KEYCOUNT];
+	const char *const readerr = "Unable to read %s\n";
 
+	for(int i=0; i<KEYCOUNT; i++)
+		last[i] = -1L;
+
+	if(!(fp = fopen(statmfile, "r"))){
+		fprintf(stderr, readerr, statmfile);
+		exit(EXIT_FAILURE);
+	}
+
+	if((err = fscanf(fp, "%lld %lld", &last[0], &last[1])) == KEYCOUNT){
+		return last[keyidx];
+	}else if(err == EOF){
+		if(ferror(fp)){
+			perror("fscanf statm");
+			exit(EXIT_FAILURE);
+		}
+		fprintf(stderr, "%s read error", statmfile);
+		exit(EXIT_FAILURE);
+	}else{
+		fprintf(stderr, "%s format error", statmfile);
+		exit(EXIT_FAILURE);
+	}
+	/* this never happens */
+	return -1L;
+}
+#endif
 
 void sigchld_handler(int signo)
 {

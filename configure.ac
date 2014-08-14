@@ -11,7 +11,11 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CC
 
-# Checks for libraries.
+# Argument to allow alternate data source
+AC_ARG_ENABLE([poll-proc-status],
+	      AS_HELP_STRING([--enable-poll-proc-status], [Enable alternate polling via /proc/<pid>/status]),
+	      AC_DEFINE([POLL_PROC_STATUS], [1], [Read values from /proc/<pid>/status]))
+	      
 
 # Checks for header files.
 AC_CHECK_HEADERS([limits.h stdlib.h string.h sys/time.h sys/wait.h])
