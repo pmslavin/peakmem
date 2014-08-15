@@ -103,7 +103,9 @@ int main(int argc, char *argv[])
 	};
 
 	if(argc == 1){
-		fprintf(stderr, usage, argv[0]);
+		char *pmname;
+		(pmname = strrchr(argv[0], '/')) ? pmname++ : (pmname = argv[0]);
+		fprintf(stderr, usage, pmname);
 		exit(EXIT_FAILURE);
 	}
 
@@ -121,8 +123,10 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "Unable to open %s.\n", statfile);
 					exit(EXIT_FAILURE);
 				}
-				pname = (char *)malloc(sizeof(char)*64);
-				fscanf(fp, "Name: %s", pname);
+				pname = malloc(sizeof(char)*80);
+				if(!fscanf(fp, "Name: %79s", pname))
+					strcpy(pname, "<unknown>");
+				
 				fclose(fp);
 				cstate = 1;
 				break;

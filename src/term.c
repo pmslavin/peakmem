@@ -100,4 +100,3 @@ int writeBanner(FILE *fp, const struct keystate *const states, const time_t delt
 
 	return linelen;
 }
-
