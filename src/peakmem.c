@@ -70,7 +70,7 @@ extern int optind;
 const int HZ = 5, KEYCOUNT = 2;
 const int STATFILE_LEN = 32, LOGFILE_LEN = 96;
 #if !defined(PACKAGE_VERSION)
-const char *const PACKAGE_VERSION = "1.0.1";
+const char *const PACKAGE_VERSION = "1.0.2";
 #endif
 static int cstate = 0, status = 0;
 static struct timeval tv[2];	/* START, LAST */
@@ -322,6 +322,7 @@ long long pollProc_statm(const char *const statmfile, int keyidx)
 	}
 
 	if((err = fscanf(fp, "%lld %lld", &last[0], &last[1])) == KEYCOUNT){
+		fclose(fp);
 		return last[keyidx];
 	}else if(err == EOF){
 		if(ferror(fp)){
@@ -334,7 +335,9 @@ long long pollProc_statm(const char *const statmfile, int keyidx)
 		fprintf(stderr, "%s format error", statmfile);
 		exit(EXIT_FAILURE);
 	}
+
 	/* this never happens */
+	fclose(fp);
 	return -1L;
 }
 #endif
