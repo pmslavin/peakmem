@@ -14,7 +14,7 @@
 .\"
 .\" 2014-08-07, initial PeakMem man
 .\"
-.TH PEAKMEM 3 2014-08-07 "PeakMem" "PeakMem Manual"
+.TH PEAKMEM 3 2014-08-17 "PeakMem" "PeakMem Manual"
 .SH NAME
 peakmem \- monitor memory usage
 .SH SYNOPSIS
@@ -66,7 +66,8 @@ Usage: PeakMem  [\fB-l\fR|\fB-s\fR] [\fB-n\fR] \fB-p\fR \fIpid\fR | \fIprogram\f
 
     \fB-h\fR                    Print this help.
 
-During execution, the \fB'q'\fR key quits PeakMem.
+During execution, the \fB'q'\fR key quits PeakMem. The \fB'u'\fR key alternates
+the base in which units are displayed from the default kB, to mB and gB.
 .SH LOGGING
 The \fB-l\fR switch causes \fBPeakMem\fR to write a logfile during
 monitoring of the program.
@@ -82,6 +83,9 @@ This logfile is in the following format:
 where the first line contains the program's name and pid, and
 the subsequent lines contain data corresponding to the 
 \fISeconds:VmPeak:VmSize:VmHWM:VmRSS\fR columns.
+
+Note the logfile values are always written in kB and are unaffected by the
+display unit selected during execution.
 
 This format is suited to plotting with \fBGNUplot\fR, and a sample script
 to generate a plot is provided (\fIoutput.plot\fR) along with sample data

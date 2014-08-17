@@ -70,7 +70,7 @@ extern int optind;
 const int HZ = 5, KEYCOUNT = 2;
 const int STATFILE_LEN = 32, LOGFILE_LEN = 96;
 #if !defined(PACKAGE_VERSION)
-const char *const PACKAGE_VERSION = "1.0.2";
+const char *const PACKAGE_VERSION = "1.1.0";
 #endif
 static int cstate = 0, status = 0;
 static struct timeval tv[2];	/* START, LAST */
@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
 	unsigned int count = 0;
 	time_t hitime = 0, deltasec = 0;
 	pid_t pid = 0;
-	int logflag = 0, silent = 0, offset_ctrl = 3, pollret = 0;
+	int logflag = 0, silent = 0, offset_ctrl = 3, pollret = 0, unit = 0;
 	int key, opt;
 	FILE *fp = NULL, *logfp = NULL;
 	static struct termios prevtios, newtios;
@@ -249,15 +249,17 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 		if(pollret && fds.revents & POLLIN){
-			if(getchar() == 'q')
+			int kp = getchar();
+			if(kp == 'q')
 				tidyexit(logfp, &prevtios, 1, 0);
-			
+			else if(kp == 'u')
+				unit = (unit+1)%3;
 		}
 
 		count++;
 
 		if(!silent)
-			writeBanner(stdout, states, deltasec);
+			writeBanner(stdout, states, deltasec, unit);
 #if defined(HAVE_DECL_NANOSLEEP)
 		struct timespec tspec = {.tv_sec = 0, .tv_nsec = 1000000000L/HZ};
 		nanosleep(&tspec, NULL);

@@ -33,7 +33,7 @@
 
 #include "term.h"
 
-const int HEADTEXT_LEN = 96, WIDTH = 112;
+const int HEADTEXT_LEN = 96, WIDTH = 101;
 const char *const usage = "Usage: %s [-l|-s] [-n] -p <pid> | <program>\n";
 const char *ctrl_green = "\x1B[32m";
 const char *ctrl_red = "\x1B[31m";
@@ -57,14 +57,14 @@ void writeHeaders(const int width, const int headtext_len, int offset_ctrl, pid_
 	
 	*p = 0;
 
-	/* -9 = uptime column; +offset_ctrl = escape code correction */
-	headidx = (width-9)/2 - headtextlen/2 + offset_ctrl;
+	/* -8 = uptime column; +offset_ctrl = escape code correction */
+	headidx = (width-8)/2 - headtextlen/2 + offset_ctrl + 1;
 	p = &header[headidx];
 	strncpy(p, headtext, headtextlen);
 
 	puts(header);
-	puts("---------------------- VmSize --------------------|--------------------- VmRSS ----------------------- Uptime -");
-	puts("   VmPeak kB     Time        AVG kB      LAST kB  |   VmHWM kB      Time        AVG kB     LAST  kB  |         ");
+	puts("-------------------- VmSize -----------------|------------------ VmRSS -------------------- Uptime -");
+	puts("      VmPeak    Time          AVG       LAST |      VmHWM    Time          AVG       LAST |         ");
 }
 
 
@@ -85,18 +85,43 @@ void fullUsage(FILE *fp, int exitcode)
 }
 
 
-int writeBanner(FILE *fp, const struct keystate *const states, const time_t deltasec)
+int writeBanner(FILE *fp, const struct keystate *const states, const time_t deltasec, int unit)
 {
 	unsigned int hours = deltasec/3600;
 	unsigned int mins = (deltasec-(3600*hours))/60;
 	unsigned int secs = deltasec % 60;
 
-	int linelen = fprintf(fp, "\r  %10lld   %02u:%02u:%02u   %10lld   %10lld |  %10lld   %02u:%02u:%02u   %10lld   %10lld | %02u:%02u:%02u",
-				states[SZ].hi, 	states[SZ].hi_hours, states[SZ].hi_mins, states[SZ].hi_secs, states[SZ].avg, states[SZ].last,
-				states[RSS].hi, states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs, states[RSS].avg, states[RSS].last,
-				hours, mins, secs);
+	unsigned char unitc;
+	double base;
+	int dw = 0;
+	
+	switch(unit){
+		default:
+		case 0:
+			unitc = 'k';
+			break;
+		case 1:
+			unitc = 'm';
+			dw = 2;
+			break;
+		case 2:
+			unitc = 'g';
+			dw = 4;
+			break;
+	}
 
+	base =  (double)(1 << 10*unit);
+
+	int linelen = fprintf(fp, "\r%1$cB %3$9.*2$f  %4$02u:%5$02u:%6$02u  %7$9.*2$f  %8$9.*2$f |  "
+			"%9$9.*2$f  %10$02u:%11$02u:%12$02u  %13$9.*2$f  %14$9.*2$f | "
+			"%15$02u:%16$02u:%17$02u",
+			unitc, dw, states[SZ].hi/base,
+			states[SZ].hi_hours, states[SZ].hi_mins, states[SZ].hi_secs,
+			states[SZ].avg/base, states[SZ].last/base,
+			states[RSS].hi/base,
+			states[RSS].hi_hours, states[RSS].hi_mins, states[RSS].hi_secs,
+			states[RSS].avg/base, states[RSS].last/base,
+			hours, mins, secs);
 	fflush(fp);
-
 	return linelen;
 }

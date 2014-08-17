@@ -34,7 +34,7 @@ extern const char *ctrl_green, *ctrl_red, *ctrl_reset;
 extern const int WIDTH, HEADTEXT_LEN;
 
 void fullUsage(FILE *, int);
-int writeBanner(FILE *, const struct keystate *, const time_t);
+int writeBanner(FILE *, const struct keystate *, const time_t, int);
 void writeHeaders(const int, const int, int, pid_t, const char *const);
 
 #endif
