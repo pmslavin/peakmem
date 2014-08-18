@@ -111,7 +111,10 @@ int writeBanner(FILE *fp, const struct keystate *const states, const time_t delt
 	}
 
 	base =  (double)(1 << 10*unit);
-
+	/* NB non-C99 $-position notation, hence the -Wno-format arg. 
+	 * Equivalent compliant format requires repetition of 'dw' arg
+	 * in each width.
+	 */
 	int linelen = fprintf(fp, "\r%1$cB %3$9.*2$f  %4$02u:%5$02u:%6$02u  %7$9.*2$f  %8$9.*2$f |  "
 			"%9$9.*2$f  %10$02u:%11$02u:%12$02u  %13$9.*2$f  %14$9.*2$f | "
 			"%15$02u:%16$02u:%17$02u",

@@ -66,7 +66,7 @@ Usage: PeakMem  [\fB-l\fR|\fB-s\fR] [\fB-n\fR] \fB-p\fR \fIpid\fR | \fIprogram\f
 
     \fB-h\fR                    Print this help.
 
-During execution, the \fB'q'\fR key quits PeakMem. The \fB'u'\fR key alternates
+During execution, the \fB'q'\fR key quits PeakMem. The \fB'u'\fR key cycles
 the base in which units are displayed from the default kB, to mB and gB.
 .SH LOGGING
 The \fB-l\fR switch causes \fBPeakMem\fR to write a logfile during
@@ -84,8 +84,8 @@ where the first line contains the program's name and pid, and
 the subsequent lines contain data corresponding to the 
 \fISeconds:VmPeak:VmSize:VmHWM:VmRSS\fR columns.
 
-Note the logfile values are always written in kB and are unaffected by the
-display unit selected during execution.
+Note that the logfile values are always written in kB and are unaffected by
+the display unit selected during execution.
 
 This format is suited to plotting with \fBGNUplot\fR, and a sample script
 to generate a plot is provided (\fIoutput.plot\fR) along with sample data
