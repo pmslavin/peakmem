@@ -219,11 +219,20 @@ int main(int argc, char *argv[])
 		writeHeaders(WIDTH, HEADTEXT_LEN, offset_ctrl, pid, pname);
 
 	while(cstate){
+		long long procret;
 		for(key=0; key<KEYCOUNT; key++){
 #if defined(POLL_PROC_STATUS)
-			states[key].last = pollProc(statfile, states[key].key);
+			procret = pollProc(statfile, states[key].key);
+			if(procret < 0)
+				tidyexit(logfp, &prevtios, 0, EXIT_FAILURE);
+			else
+				states[key].last = procret;
 #else
-			states[key].last = pgsize/1024L*pollProc_statm(statmfile, key);
+			procret = pollProc_statm(statmfile, key);
+			if(procret < 0)
+				tidyexit(logfp, &prevtios, 0, EXIT_FAILURE);
+			else
+			states[key].last = pgsize/1024L*procret;
 #endif
 		}
 		gettimeofday(&tv[LAST], NULL);
@@ -285,26 +294,33 @@ long long pollProc(const char *const statfile, const char *const key)
 	long long last =-1L;
 
 	char *head = strchr(key, ':');
-	const char *const readerr = "Unable to read %s\n";
+	const char *const readerr = "\nUnable to read %s\n";
 	int idx = head - key;
 
 	if(!(fp = fopen(statfile, "r"))){
 		fprintf(stderr, readerr, statfile);
-		exit(EXIT_FAILURE);
+		goto exit_err;
 	}
 
 	while(!feof(fp)){
 		if(!fgets(linebuf, LINE_MAX, fp)){
 			fprintf(stderr, readerr, statfile);
-			exit(EXIT_FAILURE);
+			goto exit_err;
 		}
 		if(!strncmp(key, linebuf, idx)){
-			sscanf(linebuf, key, &last);
-			break;
+			if(sscanf(linebuf, key, &last) != 1){
+				fprintf(stderr, "\npollProc match error\n");
+				goto exit_err;
+			}else{
+				fclose(fp);
+				return last;
+			}
 		}
 	}
 
-	fclose(fp);
+exit_err:
+	if(fp)
+		fclose(fp);
 	return last;
 }
 #else
@@ -313,14 +329,14 @@ long long pollProc_statm(const char *const statmfile, int keyidx)
 	FILE *fp;
 	int err;
 	long long last[KEYCOUNT];
-	const char *const readerr = "Unable to read %s\n";
+	const char *const readerr = "\nUnable to read %s\n";
 
 	for(int i=0; i<KEYCOUNT; i++)
 		last[i] = -1L;
 
 	if(!(fp = fopen(statmfile, "r"))){
 		fprintf(stderr, readerr, statmfile);
-		exit(EXIT_FAILURE);
+		goto exit_err;
 	}
 
 	if((err = fscanf(fp, "%lld %lld", &last[0], &last[1])) == KEYCOUNT){
@@ -329,17 +345,18 @@ long long pollProc_statm(const char *const statmfile, int keyidx)
 	}else if(err == EOF){
 		if(ferror(fp)){
 			perror("fscanf statm");
-			exit(EXIT_FAILURE);
+			goto exit_err;
 		}
-		fprintf(stderr, "%s read error", statmfile);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "\n%s read error", statmfile);
+		goto exit_err;
 	}else{
-		fprintf(stderr, "%s format error", statmfile);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "\n%s format error", statmfile);
+		goto exit_err;
 	}
 
-	/* this never happens */
-	fclose(fp);
+exit_err:
+	if(fp)
+		fclose(fp);
 	return -1L;
 }
 #endif
