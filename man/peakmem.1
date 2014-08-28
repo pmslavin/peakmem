@@ -12,6 +12,7 @@
 .\" Formatted or processed versions of this manual, if unaccompanied by
 .\" the source, must acknowledge the copyright and authors of this work.
 .\"
+.\" 2014-08-28, revised for MPI
 .\" 2014-08-07, initial PeakMem man
 .\"
 .TH PEAKMEM 3 2014-08-17 "PeakMem" "PeakMem Manual"
@@ -68,6 +69,17 @@ Usage: PeakMem  [\fB-l\fR|\fB-s\fR] [\fB-n\fR] \fB-p\fR \fIpid\fR | \fIprogram\f
 
 During execution, the \fB'q'\fR key quits PeakMem. The \fB'u'\fR key cycles
 the base in which units are displayed from the default kB, to mB and gB.
+.SH MPI PROGRAMS
+
+PeakMem also supports the monitoring of individual MPI processes.
+For MPI targets, PeakMem should be invoked with MPI using the following syntax:
+
+    \fBmpiexec\fR \fB-n\fR \fInprocs\fR peakmem \fB-s\fR \fIprogram\fR
+
+Note that the \fB-s\fR switch is essential to avoid a cluttered terminal.
+
+This format will result in the creation of one logfile per MPI process.
+
 .SH LOGGING
 The \fB-l\fR switch causes \fBPeakMem\fR to write a logfile during
 monitoring of the program.

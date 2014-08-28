@@ -1,4 +1,5 @@
-/* Copyright (C) 2014 Paul Slavin <slavinp@cs.man.ac.uk>
+/* Copyright (c) 2014 The University of Manchester
+ * Copyright (c) 2014 Paul Slavin <slavinp@cs.man.ac.uk>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

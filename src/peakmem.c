@@ -1,4 +1,5 @@
-/* Copyright (C) 2014 Paul Slavin <slavinp@cs.man.ac.uk>
+/* Copyright (c) 2014 The University of Manchester
+ * Copyright (c) 2014 Paul Slavin <slavinp@cs.man.ac.uk>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,7 +71,7 @@ extern int optind;
 const int HZ = 5, KEYCOUNT = 2;
 const int STATFILE_LEN = 32, LOGFILE_LEN = 96;
 #if !defined(PACKAGE_VERSION)
-const char *const PACKAGE_VERSION = "1.1.0";
+const char *const PACKAGE_VERSION = "1.1.1";
 #endif
 static int cstate = 0, status = 0;
 static struct timeval tv[2];	/* START, LAST */
@@ -373,11 +374,12 @@ void sigchld_handler(int signo)
 
 int writeLog(FILE *fp, const struct keystate *const states, const time_t deltasec)
 {
-	return fprintf(fp, "%u %lld %lld %lld %lld\n", (unsigned int)deltasec,
+	fprintf(fp, "%u %lld %lld %lld %lld\n", (unsigned int)deltasec,
 							states[SZ].hi,
 							states[SZ].last,
 							states[RSS].hi,
 							states[RSS].last);
+	fflush(fp);
 }
 
 
